@@ -1,20 +1,12 @@
 import React from "react";
-import { useAccount, useSignTypedData } from "wagmi";
-import {
-  prepareWriteContract,
-  writeContract,
-  readContract,
-} from "wagmi/actions";
-import { ethers } from "ethers";
+import { useAccount } from "wagmi";
 
-import usdcProxyAbi from "../abi/ERC20Permit.json";
-import brdigeAbi from "../abi/Bridge2.json";
-
-const HYPERLIQUID_BRIDGE_ADDRESS = "0x2Df1c51E09aECF9cacB7bc98cB1742757f163dF7";
-const USDC_PROXY_ADDRESS = "0xaf88d065e77c8cC2239327C5EDb3A432268e5831";
+import { shortPerp, bridgeFunds } from "../utils/hyperliquid";
 
 interface CardComponentProps {
   name: string;
+  assetIndex: number;
+  decimals: number;
   fundingHrly: number;
   fundingYrly: number;
   fundingAvgMonthly: number;
@@ -22,93 +14,33 @@ interface CardComponentProps {
 
 export default function CardComponent(props: CardComponentProps) {
   const { address } = useAccount();
-  const { signTypedDataAsync } = useSignTypedData();
 
   const [bridgeActive, setBridgeActive] = React.useState(false);
+  const [executingPerp, setExecutingPerp] = React.useState(false);
+  const [transactionValue, setTransactionValue] = React.useState("");
   const [isError, setIsError] = React.useState(false);
 
   async function handleButtonClick() {
+    if (!address) {
+      alert("Please connect your wallet");
+      return;
+    }
     try {
       setBridgeActive(true);
-      const deadline = Math.floor(Date.now() / 1000) + 3600; // 1 hour from now
-      const value = ethers.utils.parseUnits("6", 6); // Amount of USDC to permit (10 USDC in this example)
-
-      const domain = {
-        name: "USD Coin",
-        version: "2",
-        chainId: 42161,
-        verifyingContract: USDC_PROXY_ADDRESS,
-      };
-
-      const types = {
-        Permit: [
-          { name: "owner", type: "address" },
-          { name: "spender", type: "address" },
-          { name: "value", type: "uint256" },
-          { name: "nonce", type: "uint256" },
-          { name: "deadline", type: "uint256" },
-        ],
-      };
-      const nonce = await readContract({
-        addressOrName: USDC_PROXY_ADDRESS,
-        chainId: 42161,
-        contractInterface: usdcProxyAbi,
-        functionName: "nonces",
-        args: [address],
-      });
-
-      const message = {
-        owner: address,
-        spender: HYPERLIQUID_BRIDGE_ADDRESS,
-        value: value.toString(),
-        nonce: nonce?.toString(),
-        deadline,
-      };
-
-      const signature = await signTypedDataAsync({
-        domain,
-        types,
-        value: message,
-      });
-
-      const { v, r, s } = ethers.utils.splitSignature(signature);
-      const splitSignature = {
-        r: ethers.BigNumber.from(r).toString(),
-        s: ethers.BigNumber.from(s).toString(),
-        v: v,
-      };
-
-      const config = await prepareWriteContract({
-        addressOrName: HYPERLIQUID_BRIDGE_ADDRESS,
-        contractInterface: brdigeAbi,
-        functionName: "batchedDepositWithPermit",
-        args: [
-          [
-            {
-              user: address,
-              usd: value.toString(),
-              deadline,
-              signature: splitSignature,
-            },
-          ],
-        ],
-      });
-
-      const txReceipt = await writeContract(config);
-      console.log("Receipt:", txReceipt);
-      if (txReceipt.hash !== undefined) {
-        setIsError(true);
-        setBridgeActive(false);
-        setTimeout(() => {
-          setIsError(false);
-        }, 5000);
-      }
-
+      await bridgeFunds(address, transactionValue);
       setBridgeActive(false);
+      setExecutingPerp(true);
+      await shortPerp(
+        Number(transactionValue),
+        props.decimals,
+        props.assetIndex
+      );
+      setExecutingPerp(false);
     } catch (error) {
       console.log("Error:", error);
       setIsError(true);
       setBridgeActive(false);
+      setExecutingPerp(false);
       setTimeout(() => {
         setIsError(false);
       }, 5000);
@@ -135,16 +67,36 @@ export default function CardComponent(props: CardComponentProps) {
             <strong>Average APY (Past year):</strong> {props.fundingAvgMonthly}%
           </div>
         </div>
+        <div className="mt-4">
+          <label
+            className="block text-gray-700 text-sm font-bold mb-2"
+            htmlFor="transactionValue"
+          >
+            Transaction Value (USDC):
+          </label>
+          <input
+            type="number"
+            id="transactionValue"
+            name="transactionValue"
+            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+            placeholder="Enter value in USDC"
+            min="10"
+            step="1"
+            onChange={(e) => setTransactionValue(e.target.value)}
+          />
+        </div>
         {isError ? (
           <button className="mt-4 bg-red-500 text-white font-bold py-2 px-4 rounded">
-            Error While Bridging
+            Strategy Error
           </button>
         ) : (
           <button
             onClick={handleButtonClick}
             className="mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
           >
-            {bridgeActive ? "Executing Strategy..." : "Execute Strategy"}
+            {bridgeActive && "Brdiging Funds..."}
+            {executingPerp && "Shorting Perp..."}
+            {!bridgeActive && !executingPerp && "Execute Strategy"}
           </button>
         )}
       </div>

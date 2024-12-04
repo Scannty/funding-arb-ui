@@ -7,6 +7,8 @@ import LoadingSpinner from "./components/LoadingSpinner";
 function App() {
   interface Perp {
     name: string;
+    assetIndex: number;
+    decimals: number;
     fundingHrly: number;
     fundingYrly: number;
     fundingAvgMonthly: number;
@@ -41,6 +43,8 @@ function App() {
               <CardComponent
                 key={index}
                 name={perp.name}
+                assetIndex={perp.assetIndex}
+                decimals={perp.decimals}
                 fundingHrly={perp.fundingHrly}
                 fundingYrly={perp.fundingYrly}
                 fundingAvgMonthly={perp.fundingAvgMonthly}
