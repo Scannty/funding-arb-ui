@@ -1,7 +1,11 @@
 import React from "react";
-import { useAccount } from "wagmi";
+import { useAccount, useSigner } from "wagmi";
 
 import { shortPerp, bridgeFunds } from "../utils/hyperliquid";
+import { swapTokens } from "../utils/univ3";
+
+const WBTC_ADDRESS_ARBITRUM = "0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f";
+const USDC_ADDRESS_ARBITRUM = "0xaf88d065e77c8cC2239327C5EDb3A432268e5831";
 
 interface CardComponentProps {
   name: string;
@@ -14,14 +18,16 @@ interface CardComponentProps {
 
 export default function CardComponent(props: CardComponentProps) {
   const { address } = useAccount();
+  const { data: signer } = useSigner();
 
   const [bridgeActive, setBridgeActive] = React.useState(false);
   const [executingPerp, setExecutingPerp] = React.useState(false);
+  const [executingSwap, setExecutingSwap] = React.useState(false);
   const [transactionValue, setTransactionValue] = React.useState("");
   const [isError, setIsError] = React.useState(false);
 
   async function handleButtonClick() {
-    if (!address) {
+    if (!address || !signer) {
       alert("Please connect your wallet");
       return;
     }
@@ -36,11 +42,21 @@ export default function CardComponent(props: CardComponentProps) {
         props.assetIndex
       );
       setExecutingPerp(false);
+      setExecutingSwap(true);
+      await swapTokens(
+        USDC_ADDRESS_ARBITRUM,
+        WBTC_ADDRESS_ARBITRUM,
+        Number(transactionValue),
+        6,
+        address
+      );
+      setExecutingSwap(false);
     } catch (error) {
       console.log("Error:", error);
       setIsError(true);
       setBridgeActive(false);
       setExecutingPerp(false);
+      setExecutingSwap(false);
       setTimeout(() => {
         setIsError(false);
       }, 5000);
@@ -96,7 +112,11 @@ export default function CardComponent(props: CardComponentProps) {
           >
             {bridgeActive && "Brdiging Funds..."}
             {executingPerp && "Shorting Perp..."}
-            {!bridgeActive && !executingPerp && "Execute Strategy"}
+            {executingSwap && "Swapping Tokens..."}
+            {!bridgeActive &&
+              !executingPerp &&
+              !executingSwap &&
+              "Execute Strategy"}
           </button>
         )}
       </div>
