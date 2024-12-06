@@ -172,7 +172,44 @@ export async function shortPerp(
   }
 }
 
-async function _signL1Action(action: any, nonce: number, isMainnet: boolean) {
+export async function updateLeverage(
+  leverageAmount: number,
+  assetIndex: number
+) {
+  const action = {
+    type: "updateLeverage",
+    asset: assetIndex,
+    isCross: false,
+    leverage: leverageAmount,
+  };
+
+  const nonce = Date.now();
+
+  const signature = await _signL1Action(action, nonce, true);
+  const { v, r, s } = ethers.utils.splitSignature(signature);
+
+  console.log("Sending leverage update to Hyperliquid...");
+  const res = await fetch("https://api.hyperliquid.xyz/exchange", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      action: action,
+      nonce: nonce,
+      signature: { r, s, v },
+    }),
+  });
+  const data = await res.json();
+  console.log(`Leverage set to ${leverageAmount}x`);
+  console.log(data);
+}
+
+async function _signL1Action(
+  action: any,
+  nonce: number,
+  isMainnet: boolean
+): Promise<string> {
   const hash = _actionHash(action, nonce);
   const phantomAgent = _constructPhantomAgent(hash, isMainnet);
   const domain = {

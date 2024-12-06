@@ -1,7 +1,8 @@
 import React from "react";
 import { useAccount, useSigner } from "wagmi";
+import { Slider } from "@mui/material";
 
-import { shortPerp, bridgeFunds } from "../utils/hyperliquid";
+import { shortPerp, bridgeFunds, updateLeverage } from "../utils/hyperliquid";
 import { swapTokens } from "../utils/univ3";
 
 const WBTC_ADDRESS_ARBITRUM = "0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f";
@@ -23,8 +24,18 @@ export default function CardComponent(props: CardComponentProps) {
   const [bridgeActive, setBridgeActive] = React.useState(false);
   const [executingPerp, setExecutingPerp] = React.useState(false);
   const [executingSwap, setExecutingSwap] = React.useState(false);
+  const [executingLeverage, setExecutingLeverage] = React.useState(false);
+
   const [transactionValue, setTransactionValue] = React.useState("");
+  const [leverageRatio, setLeverageRatio] = React.useState(1);
+
   const [isError, setIsError] = React.useState(false);
+
+  function handleSliderChange(event: Event, newValue: number | number[]) {
+    if (typeof newValue === "number") {
+      setLeverageRatio(newValue);
+    }
+  }
 
   async function handleButtonClick() {
     if (!address || !signer) {
@@ -35,6 +46,9 @@ export default function CardComponent(props: CardComponentProps) {
       setBridgeActive(true);
       await bridgeFunds(address, transactionValue);
       setBridgeActive(false);
+      setExecutingLeverage(true);
+      await updateLeverage(leverageRatio, props.assetIndex);
+      setExecutingLeverage(false);
       setExecutingPerp(true);
       await shortPerp(
         Number(transactionValue),
@@ -63,6 +77,11 @@ export default function CardComponent(props: CardComponentProps) {
     }
   }
 
+  function calculateEffectiveAPY(leverageRatio: number, fundingRate: number) {
+    const effectiveAPY = (fundingRate * leverageRatio) / (1 + leverageRatio);
+    return effectiveAPY.toFixed(2);
+  }
+
   return (
     <div className="max-w-sm rounded overflow-hidden shadow-lg m-4">
       <img
@@ -77,11 +96,28 @@ export default function CardComponent(props: CardComponentProps) {
         <p className="text-gray-700 text-base">Strategy Info</p>
         <div className="mt-4 text-lg">
           <div>
-            <strong>Current APY:</strong> {props.fundingYrly}%
+            <strong>Current APY:</strong>{" "}
+            {calculateEffectiveAPY(leverageRatio, props.fundingYrly)}%
           </div>
           <div>
-            <strong>Average APY (Past year):</strong> {props.fundingAvgMonthly}%
+            <strong>Average APY (Past year):</strong>{" "}
+            {calculateEffectiveAPY(leverageRatio, props.fundingAvgMonthly)}%
           </div>
+          <div>
+            <strong>Adjust your leverage ratio:</strong>
+          </div>
+          <Slider
+            aria-label="Leverage"
+            getAriaValueText={() => "Leverage Slider"}
+            valueLabelDisplay="auto"
+            shiftStep={1}
+            step={1}
+            value={leverageRatio}
+            onChange={handleSliderChange}
+            marks
+            min={1}
+            max={5}
+          />
         </div>
         <div className="mt-4">
           <label
@@ -113,9 +149,11 @@ export default function CardComponent(props: CardComponentProps) {
             {bridgeActive && "Brdiging Funds..."}
             {executingPerp && "Shorting Perp..."}
             {executingSwap && "Swapping Tokens..."}
+            {executingLeverage && "Updating Leverage..."}
             {!bridgeActive &&
               !executingPerp &&
               !executingSwap &&
+              !executingLeverage &&
               "Execute Strategy"}
           </button>
         )}
