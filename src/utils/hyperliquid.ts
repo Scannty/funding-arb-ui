@@ -245,12 +245,16 @@ function _formatPrice(price: number, szDecimals: number) {
     significantIntegerPart.length + significantDecimalPart.length;
 
   if (numberOfSignificantDigits > MAX_SIGNIFICANT_DIGITS) {
-    console.log(numberOfSignificantDigits);
     const decimalPartLength = formattedDecimalPart.length;
 
-    return formattedPrice.toFixed(
-      decimalPartLength - (numberOfSignificantDigits - MAX_SIGNIFICANT_DIGITS)
-    );
+    let roundingFactor =
+      decimalPartLength - (numberOfSignificantDigits - MAX_SIGNIFICANT_DIGITS);
+
+    if (roundingFactor < 0) {
+      roundingFactor = 0;
+    }
+
+    return formattedPrice.toFixed(roundingFactor);
   } else {
     return formattedPrice;
   }
