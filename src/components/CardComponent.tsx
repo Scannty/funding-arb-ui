@@ -10,14 +10,12 @@ import {
   generateRandomAgent,
 } from "../utils/hyperliquid";
 import { swapTokens } from "../utils/univ3";
-
-const WBTC_ADDRESS_ARBITRUM = "0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f";
-const USDC_ADDRESS_ARBITRUM = "0xaf88d065e77c8cC2239327C5EDb3A432268e5831";
+import { USDC_PROXY_ADDRESS } from "../constants/config";
+import { tokens } from "../constants/tokens";
 
 interface CardComponentProps {
   name: string;
   assetIndex: number;
-  decimals: number;
   fundingHrly: number;
   fundingYrly: number;
   fundingAvgMonthly: number;
@@ -65,7 +63,7 @@ export default function CardComponent(props: CardComponentProps) {
       setExecutingPerp(true);
       await shortPerp(
         Number(transactionValue),
-        props.decimals,
+        tokens[props.name].decimals,
         props.assetIndex,
         agentWallet
       );
@@ -73,10 +71,10 @@ export default function CardComponent(props: CardComponentProps) {
 
       setExecutingSwap(true);
       await swapTokens(
-        USDC_ADDRESS_ARBITRUM,
-        WBTC_ADDRESS_ARBITRUM,
+        USDC_PROXY_ADDRESS,
+        tokens[props.name].tokenAddress,
         Number(transactionValue),
-        6,
+        tokens[props.name].decimals,
         address
       );
       setExecutingSwap(false);
@@ -162,10 +160,12 @@ export default function CardComponent(props: CardComponentProps) {
             className="mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
           >
             {bridgeActive && "Brdiging Funds..."}
+            {approvingAgent && "Approving Agent Wallet..."}
             {executingPerp && "Shorting Perp..."}
             {executingSwap && "Swapping Tokens..."}
             {executingLeverage && "Updating Leverage..."}
             {!bridgeActive &&
+              !approvingAgent &&
               !executingPerp &&
               !executingSwap &&
               !executingLeverage &&

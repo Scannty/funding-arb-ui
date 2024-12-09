@@ -44,7 +44,6 @@ function App() {
                 key={index}
                 name={perp.name}
                 assetIndex={perp.assetIndex}
-                decimals={perp.decimals}
                 fundingHrly={perp.fundingHrly}
                 fundingYrly={perp.fundingYrly}
                 fundingAvgMonthly={perp.fundingAvgMonthly}

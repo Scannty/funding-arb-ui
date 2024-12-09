@@ -9,12 +9,12 @@ import { ethers } from "ethers";
 
 import usdcProxyAbi from "../abi/ERC20Permit.json";
 import brdigeAbi from "../abi/Bridge2.json";
-
-const MAX_DECIMALS = 6;
-const MAX_SIGNIFICANT_DIGITS = 5;
-
-const HYPERLIQUID_BRIDGE_ADDRESS = "0x2Df1c51E09aECF9cacB7bc98cB1742757f163dF7";
-const USDC_PROXY_ADDRESS = "0xaf88d065e77c8cC2239327C5EDb3A432268e5831";
+import {
+  HYPERLIQUID_BRIDGE_ADDRESS,
+  USDC_PROXY_ADDRESS,
+  MAX_DECIMALS,
+  MAX_SIGNIFICANT_DIGITS,
+} from "../constants/config";
 
 interface SplitSingature {
   r: string;

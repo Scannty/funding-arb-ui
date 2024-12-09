@@ -2,8 +2,7 @@ import { erc20ABI } from "wagmi";
 import { prepareWriteContract, writeContract } from "wagmi/actions";
 
 import uniV3RouterAbi from "../abi/UniRouterV3.json";
-
-const UNISWAP_V3_ROUTER_ADDRESS = "0x68b3465833fb72A70ecDF485E0e4C7bD8665Fc45";
+import { UNISWAP_V3_ROUTER_ADDRESS } from "../constants/config";
 
 export async function swapTokens(
   tokenIn: string,
