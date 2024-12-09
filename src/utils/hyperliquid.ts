@@ -16,9 +16,14 @@ const MAX_SIGNIFICANT_DIGITS = 5;
 const HYPERLIQUID_BRIDGE_ADDRESS = "0x2Df1c51E09aECF9cacB7bc98cB1742757f163dF7";
 const USDC_PROXY_ADDRESS = "0xaf88d065e77c8cC2239327C5EDb3A432268e5831";
 
+interface SplitSingature {
+  r: string;
+  s: string;
+  v: number;
+}
+
 export async function bridgeFunds(address: string, amount: string) {
   try {
-    // setBridgeActive(true);
     const deadline = Math.floor(Date.now() / 1000) + 3600; // 1 hour from now
     const value = ethers.utils.parseUnits(amount, 6); // Amount of USDC to permit (10 USDC in this example)
 
@@ -38,6 +43,7 @@ export async function bridgeFunds(address: string, amount: string) {
         { name: "deadline", type: "uint256" },
       ],
     };
+
     const nonce = await readContract({
       addressOrName: USDC_PROXY_ADDRESS,
       chainId: 42161,
@@ -46,7 +52,7 @@ export async function bridgeFunds(address: string, amount: string) {
       args: [address],
     });
 
-    const message = {
+    const action = {
       owner: address,
       spender: HYPERLIQUID_BRIDGE_ADDRESS,
       value: value.toString(),
@@ -54,18 +60,14 @@ export async function bridgeFunds(address: string, amount: string) {
       deadline,
     };
 
-    const signature = await signTypedData({
-      domain,
-      types,
-      value: message,
-    });
+    console.log("Signing message...");
+    const signature = await _signEvmAction(42161, types, action, domain);
 
-    const { v, r, s } = ethers.utils.splitSignature(signature);
-    const splitSignature = {
-      r: ethers.BigNumber.from(r).toString(),
-      s: ethers.BigNumber.from(s).toString(),
-      v: v,
-    };
+    // Turning the r and s values from hexadecimals to numbers
+    signature.r = ethers.BigNumber.from(signature.r).toString();
+    signature.s = ethers.BigNumber.from(signature.s).toString();
+    console.log("Message signed!");
+    console.log("Signature:", signature);
 
     const config = await prepareWriteContract({
       addressOrName: HYPERLIQUID_BRIDGE_ADDRESS,
@@ -77,7 +79,7 @@ export async function bridgeFunds(address: string, amount: string) {
             user: address,
             usd: value.toString(),
             deadline,
-            signature: splitSignature,
+            signature,
           },
         ],
       ],
@@ -97,7 +99,8 @@ export async function bridgeFunds(address: string, amount: string) {
 export async function shortPerp(
   amount: number,
   perpDecimals: number,
-  assetIndex: number
+  assetIndex: number,
+  agentWallet: ethers.Wallet
 ) {
   // Getting the mid price of the perp
   console.log("Getting current mid price of the perp...");
@@ -141,15 +144,8 @@ export async function shortPerp(
 
   try {
     console.log("Signing message...");
-    const signature = await _signL1Action(action, nonce, true);
-    const { v, r, s } = ethers.utils.splitSignature(signature);
-    const splitSignature = {
-      r: r,
-      s: s,
-      v: v,
-    };
+    const signature = await _signL1Action(action, nonce, true, agentWallet);
     console.log("Message signed!");
-    console.log("Split signature: ", splitSignature);
 
     console.log("Sending order to Hyperliquid...");
     const res = await fetch("https://api.hyperliquid.xyz/exchange", {
@@ -160,7 +156,7 @@ export async function shortPerp(
       body: JSON.stringify({
         action: action,
         nonce: nonce,
-        signature: splitSignature,
+        signature,
       }),
     });
 
@@ -174,7 +170,8 @@ export async function shortPerp(
 
 export async function updateLeverage(
   leverageAmount: number,
-  assetIndex: number
+  assetIndex: number,
+  agentWallet: ethers.Wallet
 ) {
   const action = {
     type: "updateLeverage",
@@ -185,8 +182,9 @@ export async function updateLeverage(
 
   const nonce = Date.now();
 
-  const signature = await _signL1Action(action, nonce, true);
-  const { v, r, s } = ethers.utils.splitSignature(signature);
+  console.log("Signing message...");
+  const signature = await _signL1Action(action, nonce, true, agentWallet);
+  console.log("Message signed!");
 
   console.log("Sending leverage update to Hyperliquid...");
   const res = await fetch("https://api.hyperliquid.xyz/exchange", {
@@ -197,19 +195,96 @@ export async function updateLeverage(
     body: JSON.stringify({
       action: action,
       nonce: nonce,
-      signature: { r, s, v },
+      signature,
     }),
   });
+
   const data = await res.json();
   console.log(`Leverage set to ${leverageAmount}x`);
   console.log(data);
 }
 
+export async function approveAgentWallet(agentAddress: string) {
+  const nonce = Date.now();
+  const action = {
+    type: "approveAgent",
+    hyperliquidChain: "Mainnet",
+    signatureChainId: "0xa4b1",
+    agentAddress,
+    agentName: "funding_agent",
+    nonce,
+  };
+
+  const types = {
+    "HyperliquidTransaction:ApproveAgent": [
+      { name: "hyperliquidChain", type: "string" },
+      { name: "agentAddress", type: "address" },
+      { name: "agentName", type: "string" },
+      { name: "nonce", type: "uint64" },
+    ],
+  };
+
+  console.log("Signing message...");
+  const signature = await _signEvmAction(42161, types, action);
+  console.log("Message signed!");
+
+  console.log("Approving API agent for trading...");
+  const res = await fetch("https://api.hyperliquid.xyz/exchange", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      action,
+      nonce,
+      signature,
+    }),
+  });
+
+  const data = await res.json();
+  console.log("Agent approved for trading!");
+  console.log(data);
+}
+
+export function generateRandomAgent(): ethers.Wallet {
+  return ethers.Wallet.createRandom();
+}
+
+async function _signEvmAction(
+  chainId: number,
+  types: any,
+  action: any,
+  domain?: any
+): Promise<SplitSingature> {
+  if (!domain)
+    domain = {
+      name: "HyperliquidSignTransaction",
+      version: "1",
+      chainId,
+      verifyingContract: "0x0000000000000000000000000000000000000000",
+    };
+
+  try {
+    const signature = await signTypedData({
+      domain,
+      types,
+      value: action,
+    });
+
+    const splitSignature = ethers.utils.splitSignature(signature);
+    return splitSignature;
+  } catch (error) {
+    console.log(error);
+    return { r: "", s: "", v: 0 };
+  }
+}
+
 async function _signL1Action(
   action: any,
   nonce: number,
-  isMainnet: boolean
-): Promise<string> {
+  isMainnet: boolean,
+  agentWallet: ethers.Wallet
+): Promise<SplitSingature> {
   const hash = _actionHash(action, nonce);
   const phantomAgent = _constructPhantomAgent(hash, isMainnet);
   const domain = {
@@ -227,16 +302,12 @@ async function _signL1Action(
   const message = phantomAgent;
 
   try {
-    if (!process.env.REACT_APP_PRIVATE_KEY) {
-      throw new Error("Private key not found");
-    }
-    const wallet = new ethers.Wallet(process.env.REACT_APP_PRIVATE_KEY);
-
-    const signature = await wallet._signTypedData(domain, types, message);
-    return signature;
+    const signature = await agentWallet._signTypedData(domain, types, message);
+    const splitSignature = ethers.utils.splitSignature(signature);
+    return splitSignature;
   } catch (error) {
     console.log(error);
-    return "";
+    return { r: "", s: "", v: 0 };
   }
 }
 

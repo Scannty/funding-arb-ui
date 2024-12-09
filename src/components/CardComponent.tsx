@@ -2,7 +2,13 @@ import React from "react";
 import { useAccount, useSigner } from "wagmi";
 import { Slider } from "@mui/material";
 
-import { shortPerp, bridgeFunds, updateLeverage } from "../utils/hyperliquid";
+import {
+  shortPerp,
+  bridgeFunds,
+  updateLeverage,
+  approveAgentWallet,
+  generateRandomAgent,
+} from "../utils/hyperliquid";
 import { swapTokens } from "../utils/univ3";
 
 const WBTC_ADDRESS_ARBITRUM = "0x2f2a2543B76A4166549F7aaB2e75Bef0aefC5B0f";
@@ -22,6 +28,7 @@ export default function CardComponent(props: CardComponentProps) {
   const { data: signer } = useSigner();
 
   const [bridgeActive, setBridgeActive] = React.useState(false);
+  const [approvingAgent, setApprovingAgent] = React.useState(false);
   const [executingPerp, setExecutingPerp] = React.useState(false);
   const [executingSwap, setExecutingSwap] = React.useState(false);
   const [executingLeverage, setExecutingLeverage] = React.useState(false);
@@ -46,16 +53,24 @@ export default function CardComponent(props: CardComponentProps) {
       setBridgeActive(true);
       await bridgeFunds(address, transactionValue);
       setBridgeActive(false);
+
+      setApprovingAgent(true);
+      const agentWallet = generateRandomAgent();
+      await approveAgentWallet(agentWallet.address);
+
       setExecutingLeverage(true);
-      await updateLeverage(leverageRatio, props.assetIndex);
+      await updateLeverage(leverageRatio, props.assetIndex, agentWallet);
       setExecutingLeverage(false);
+
       setExecutingPerp(true);
       await shortPerp(
         Number(transactionValue),
         props.decimals,
-        props.assetIndex
+        props.assetIndex,
+        agentWallet
       );
       setExecutingPerp(false);
+
       setExecutingSwap(true);
       await swapTokens(
         USDC_ADDRESS_ARBITRUM,
