@@ -1,6 +1,7 @@
 import React from "react";
 import { useAccount, useSigner } from "wagmi";
 import { Slider } from "@mui/material";
+import { TokenIcon } from "@web3icons/react";
 
 import {
   shortPerp,
@@ -91,19 +92,24 @@ export default function CardComponent(props: CardComponentProps) {
   }
 
   function calculateEffectiveAPY(leverageRatio: number, fundingRate: number) {
+    console.log(fundingRate, leverageRatio);
     const effectiveAPY = (fundingRate * leverageRatio) / (1 + leverageRatio);
     return effectiveAPY.toFixed(2);
   }
 
   return (
-    <div className="max-w-sm rounded overflow-hidden shadow-lg m-4">
-      <img
-        src={
-          "https://upload.wikimedia.org/wikipedia/commons/thumb/4/46/Bitcoin.svg/1200px-Bitcoin.svg.png"
-        }
-        alt={props.name}
-        className="w-full h-48 object-cover"
-      />
+    <div className="max-w-sm rounded overflow-hidden shadow-lg m-4 bg-slate-100">
+      <div className="flex justify-center mt-6">
+        {tokens[props.name] && (
+          <TokenIcon
+            symbol={tokens[props.name].iconSymbol}
+            variant="branded"
+            size={96}
+          />
+        )}
+        <TokenIcon symbol="usdc" variant="branded" size={96} />
+      </div>
+
       <div className="px-6 py-4">
         <div className="font-bold text-xl mb-2">{props.name}</div>
         <p className="text-gray-700 text-base">Strategy Info</p>
