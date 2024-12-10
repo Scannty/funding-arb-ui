@@ -22,6 +22,23 @@ interface SplitSingature {
   v: number;
 }
 
+export async function getAccountSummary(address: string): Promise<any> {
+  const res = await fetch("https://api.hyperliquid.xyz/info", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      type: "clearinghouseState",
+      user: address,
+    }),
+  });
+  const data = await res.json();
+  console.log(data);
+
+  return data;
+}
+
 export async function bridgeFunds(address: string, amount: string) {
   try {
     const deadline = Math.floor(Date.now() / 1000) + 3600; // 1 hour from now
@@ -99,6 +116,7 @@ export async function bridgeFunds(address: string, amount: string) {
 export async function shortPerp(
   amount: number,
   perpDecimals: number,
+  slippage: number,
   assetIndex: number,
   agentWallet: ethers.Wallet
 ) {
@@ -114,8 +132,8 @@ export async function shortPerp(
   const size = amount / midPrice;
 
   // Calculating the execution price of the position
-  const slippage = midPrice * 0.00008; // 0.008% slippage, should adjust dynamically
-  const executionPrice = midPrice - slippage;
+  const slippageAmount = slippage * 0.00008; // 0.008% slippage, should adjust dynamically
+  const executionPrice = midPrice - slippageAmount;
   const formattedExecutionPrice = _formatPrice(executionPrice, perpDecimals);
 
   console.log("Execution Price: ", formattedExecutionPrice);
@@ -163,6 +181,7 @@ export async function shortPerp(
     const data = await res.json();
     console.log("Order executed");
     console.log(data);
+    return data.response.data.statuses;
   } catch (error) {
     console.log("Error executing order: ", error);
   }

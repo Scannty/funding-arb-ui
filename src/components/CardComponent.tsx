@@ -17,6 +17,7 @@ import { tokens } from "../constants/tokens";
 interface CardComponentProps {
   name: string;
   assetIndex: number;
+  perpDecimals: number;
   fundingHrly: number;
   fundingYrly: number;
   fundingAvgMonthly: number;
@@ -56,6 +57,7 @@ export default function CardComponent(props: CardComponentProps) {
       setApprovingAgent(true);
       const agentWallet = generateRandomAgent();
       await approveAgentWallet(agentWallet.address);
+      setApprovingAgent(false);
 
       setExecutingLeverage(true);
       await updateLeverage(leverageRatio, props.assetIndex, agentWallet);
@@ -64,7 +66,8 @@ export default function CardComponent(props: CardComponentProps) {
       setExecutingPerp(true);
       await shortPerp(
         Number(transactionValue),
-        tokens[props.name].decimals,
+        props.perpDecimals,
+        0.001,
         props.assetIndex,
         agentWallet
       );
@@ -75,7 +78,7 @@ export default function CardComponent(props: CardComponentProps) {
         USDC_PROXY_ADDRESS,
         tokens[props.name].tokenAddress,
         Number(transactionValue),
-        tokens[props.name].decimals,
+        6,
         address
       );
       setExecutingSwap(false);
@@ -91,8 +94,32 @@ export default function CardComponent(props: CardComponentProps) {
     }
   }
 
+  // async function storeTradeData(
+  //   userAddress: string,
+  //   perpExecutionPrice: number,
+  //   spotExecutionPrice: number
+  // ): Promise<void> {
+  //   // Store trade data
+  //   const res = await fetch("http://localhost:8000/storeTradeData", {
+  //     method: "POST",
+  //     headers: {
+  //       "Content-Type": "application/json",
+  //     },
+  //     body: JSON.stringify({
+  //       userAddress,
+  //       tradeInfo: {
+  //         perpExecutionPrice,
+  //         spotExecutionPrice,
+  //         transactionValue,
+  //       },
+  //     }),
+  //   });
+
+  //   const data = await res.json();
+  //   console.log(data);
+  // }
+
   function calculateEffectiveAPY(leverageRatio: number, fundingRate: number) {
-    console.log(fundingRate, leverageRatio);
     const effectiveAPY = (fundingRate * leverageRatio) / (1 + leverageRatio);
     return effectiveAPY.toFixed(2);
   }
