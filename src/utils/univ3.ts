@@ -1,5 +1,6 @@
 import { erc20ABI } from "wagmi";
 import { prepareWriteContract, writeContract } from "wagmi/actions";
+import { ethers } from "ethers";
 
 import uniV3RouterAbi from "../abi/UniRouterV3.json";
 import { UNISWAP_V3_ROUTER_ADDRESS } from "../constants/config";
@@ -14,11 +15,13 @@ export async function swapTokens(
   try {
     // Approve router to spend USDC
     console.log("Approving the Uniswap V3 Router for swap...");
+    const swapAmount = ethers.utils.parseUnits(amount.toString(), decimals);
+
     const configApprove = await prepareWriteContract({
       addressOrName: tokenIn,
       contractInterface: erc20ABI,
       functionName: "approve",
-      args: [UNISWAP_V3_ROUTER_ADDRESS, amount * 10 ** decimals],
+      args: [UNISWAP_V3_ROUTER_ADDRESS, swapAmount],
     });
 
     const txReceiptApprove = await writeContract(configApprove);
@@ -36,7 +39,7 @@ export async function swapTokens(
       fee: 3000,
       recipient: address,
       deadline: Date.now() + 1000 * 60 * 10,
-      amountIn: amount * 10 ** decimals,
+      amountIn: swapAmount,
       amountOutMinimum: 0,
       sqrtPriceLimitX96: 0,
     };
@@ -54,6 +57,8 @@ export async function swapTokens(
     if (txReceipt.hash === undefined) {
       throw new Error("Transaction failed");
     }
+
+    return txReceipt.hash;
   } catch (error) {
     console.log(error);
   }
