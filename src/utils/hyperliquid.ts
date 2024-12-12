@@ -113,9 +113,10 @@ export async function bridgeFunds(address: string, amount: string) {
   }
 }
 
-export async function shortPerp(
+export async function openOrder(
   amount: number,
   perpDecimals: number,
+  orderType: "buy" | "sell",
   slippage: number,
   assetIndex: number,
   agentWallet: ethers.Wallet
@@ -132,8 +133,11 @@ export async function shortPerp(
   const size = amount / midPrice;
 
   // Calculating the execution price of the position
-  const slippageAmount = slippage * 0.00008; // 0.008% slippage, should adjust dynamically
-  const executionPrice = midPrice - slippageAmount;
+  const slippageAmount = slippage * amount; // 0.008% slippage, should adjust dynamically
+  const executionPrice =
+    orderType === "sell"
+      ? midPrice - slippageAmount
+      : midPrice + slippageAmount;
   const formattedExecutionPrice = _formatPrice(executionPrice, perpDecimals);
 
   console.log("Execution Price: ", formattedExecutionPrice);
@@ -144,7 +148,7 @@ export async function shortPerp(
     orders: [
       {
         a: assetIndex,
-        b: false,
+        b: orderType === "buy",
         p: formattedExecutionPrice,
         s: size.toFixed(perpDecimals).toString(),
         r: false,

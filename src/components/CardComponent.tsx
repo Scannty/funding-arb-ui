@@ -4,7 +4,7 @@ import { Slider } from "@mui/material";
 import { TokenIcon } from "@web3icons/react";
 
 import {
-  shortPerp,
+  openOrder,
   bridgeFunds,
   updateLeverage,
   approveAgentWallet,
@@ -64,9 +64,10 @@ export default function CardComponent(props: CardComponentProps) {
       setExecutingLeverage(false);
 
       setExecutingPerp(true);
-      await shortPerp(
+      await openOrder(
         Number(transactionValue),
         props.perpDecimals,
+        "sell",
         0.001,
         props.assetIndex,
         agentWallet
