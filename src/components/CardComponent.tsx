@@ -91,7 +91,7 @@ export default function CardComponent(props: CardComponentProps) {
         await swapTokens(
           USDC_PROXY_ADDRESS,
           tokens[props.name].tokenAddress,
-          Number(transactionValue),
+          Number(transactionValue) * leverageRatio,
           6,
           address
         );
