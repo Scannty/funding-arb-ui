@@ -2,6 +2,7 @@ import React from "react";
 import { useAccount, useBalance } from "wagmi";
 
 import Header from "./components/Header";
+import Footer from "./components/Footer";
 import CardComponent from "./components/CardComponent";
 import LoadingSpinner from "./components/LoadingSpinner";
 import { tokens } from "./constants/tokens";
@@ -66,36 +67,44 @@ function App() {
   }, []);
 
   return (
-    <>
+    <div className="flex flex-col w-full min-h-screen">
       <Header />
       {loading ? (
         <div className="flex justify-center items-center">
           <LoadingSpinner />
         </div>
       ) : (
-        <main>
-          <PortfolioInfo
-            usdcBalance={usdcBalance}
-            hyperliquidBalance={hyperliquidBalance}
-            portfolioValue={portfolioValue}
-            openPositions={openPositions}
-          />
-          <div className="mx-32 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {perpsInfo.map((perp, index) => (
-              <CardComponent
-                key={index}
-                name={perp.name}
-                perpDecimals={perp.decimals}
-                assetIndex={perp.assetIndex}
-                fundingHrly={perp.fundingHrly}
-                fundingYrly={perp.fundingYrly}
-                fundingAvgMonthly={perp.fundingAvgMonthly}
-              />
-            ))}
-          </div>
-        </main>
+        <>
+          <main>
+            {/* Hero section with title and stats */}
+            <PortfolioInfo
+              usdcBalance={usdcBalance}
+              hyperliquidBalance={hyperliquidBalance}
+              portfolioValue={portfolioValue}
+              openPositions={openPositions}
+            />
+
+            {/* Card grid section */}
+            <div className="flex flex-col items-center py-16 px-8 gap-10 bg-white">
+              <div className="grid-cols-3 gap-x-24 gap-y-16 w-full place-items-center flex flex-wrap justify-center">
+                {perpsInfo.map((perp, index) => (
+                  <CardComponent
+                    key={index}
+                    name={perp.name}
+                    perpDecimals={perp.decimals}
+                    assetIndex={perp.assetIndex}
+                    fundingHrly={perp.fundingHrly}
+                    fundingYrly={perp.fundingYrly}
+                    fundingAvgMonthly={perp.fundingAvgMonthly}
+                  />
+                ))}
+              </div>
+            </div>
+          </main>
+          <Footer />
+        </>
       )}
-    </>
+    </div>
   );
 }
 

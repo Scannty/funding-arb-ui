@@ -183,8 +183,11 @@ export async function openOrder(
     });
 
     const data = await res.json();
+    if (data.status === "err") {
+      throw new Error(data.response);
+    }
+
     console.log("Order executed");
-    console.log(data);
     return data.response.data.statuses;
   } catch (error) {
     console.log("Error executing order: ", error);
