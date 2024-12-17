@@ -101,17 +101,10 @@ export default function PortfolioInfo(props: {
                 Number(position.position.cumFunding.allTime) * -1;
               const targetQuote = quotes[index];
 
-              const slippageAmount = Number(
-                (
-                  Number(position.position.positionValue) +
-                  targetQuote -
-                  60
-                ).toFixed(2)
-              );
+              const slippageAmount =
+                Number(position.position.positionValue) + targetQuote - 60;
 
-              const positionPnL = (
-                slippageAmount + fundingFeeCollected
-              ).toFixed(2);
+              const positionPnL = slippageAmount + fundingFeeCollected;
 
               return (
                 <div
@@ -147,7 +140,7 @@ export default function PortfolioInfo(props: {
                       Funding Fee Collected
                     </p>
                     <p className="font-inter font-semibold text-lg text-[#1E1E1E]">
-                      ${fundingFeeCollected}
+                      ${fundingFeeCollected.toFixed(2)}
                     </p>
                   </div>
                   <div className="text-center">
@@ -155,7 +148,7 @@ export default function PortfolioInfo(props: {
                       Total Slippage Estimate
                     </p>
                     <p className="font-inter font-semibold text-lg text-[#1E1E1E]">
-                      ${slippageAmount}
+                      ${slippageAmount.toFixed(2)}
                     </p>
                   </div>
                   <div className="text-center">
@@ -163,7 +156,7 @@ export default function PortfolioInfo(props: {
                       Position PnL
                     </p>
                     <p className="font-inter font-semibold text-lg text-[#1E1E1E]">
-                      ${positionPnL}
+                      ${positionPnL.toFixed(2)}
                     </p>
                   </div>
                 </div>
