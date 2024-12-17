@@ -214,7 +214,7 @@ export default function CardComponent(props: CardComponentProps) {
               ${
                 isError
                   ? "bg-red-500 border-red-500"
-                  : "bg-[#2C2C2C] border-[#2C2C2C]"
+                  : "bg-[#313131] border-[#313131] hover:bg-black hover:border-[#1E1E1E]"
               }
               border rounded-lg order-4 self-stretch`}
           >
