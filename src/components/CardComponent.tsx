@@ -1,7 +1,8 @@
 import React from "react";
 import { useAccount, useSigner } from "wagmi";
-import { Slider } from "@mui/material";
+// import { Slider } from "@mui/material";
 import { TokenIcon } from "@web3icons/react";
+import { DiscreteSlider } from './DiscreteSlider';
 
 import {
   openOrder,
@@ -38,11 +39,11 @@ export default function CardComponent(props: CardComponentProps) {
 
   const [isError, setIsError] = React.useState(false);
 
-  function handleSliderChange(event: Event, newValue: number | number[]) {
-    if (typeof newValue === "number") {
-      setLeverageRatio(newValue);
-    }
-  }
+  // function handleSliderChange(event: Event, newValue: number | number[]) {
+  //   if (typeof newValue === "number") {
+  //     setLeverageRatio(newValue);
+  //   }
+  // }
 
   async function handleButtonClick() {
     if (!address || !signer) {
@@ -126,8 +127,9 @@ export default function CardComponent(props: CardComponentProps) {
   }
 
   return (
-    <div className="max-w-sm rounded overflow-hidden shadow-lg m-4 bg-slate-100">
-      <div className="flex justify-center mt-6">
+    <div className="box-border flex flex-col items-start p-4 w-[397.67px] min-w-[320px] max-w-[400px] h-[650px] bg-white border border-[#757575] gap-4">
+      {/* Product Image */}
+      <div className="flex justify-center items-center w-[365.67px] h-[200px]">
         {tokens[props.name] && (
           <TokenIcon
             symbol={tokens[props.name].iconSymbol}
@@ -138,74 +140,99 @@ export default function CardComponent(props: CardComponentProps) {
         <TokenIcon symbol="usdc" variant="branded" size={96} />
       </div>
 
-      <div className="px-6 py-4">
-        <div className="font-bold text-xl mb-2">{props.name}</div>
-        <p className="text-gray-700 text-base">Strategy Info</p>
-        <div className="mt-4 text-lg">
-          <div>
-            <strong>Current APY:</strong>{" "}
-            {calculateEffectiveAPY(leverageRatio, props.fundingYrly)}%
+      {/* Column section */}
+      <div className="flex flex-col justify-center items-start p-0 w-[365.67px] h-[233px] gap-6 order-1 self-stretch flex-none">
+        {/* Body section */}
+        <div className="flex flex-col items-start p-0 w-[365.67px] h-[207px] gap-4 order-0 self-stretch flex-none">
+          {/* Product Info */}
+          <div className="relative w-[368px] h-[67px] order-0 flex-none">
+            <h2 className="absolute w-[149px] h-[29px] left-0 top-0 font-inter font-semibold text-2xl leading-[120%] tracking-[-0.02em] text-[#1E1E1E]">
+              {props.name}
+            </h2>
+            <p className="absolute w-[368px] h-[22px] left-0 top-[45px] font-inter font-normal text-base leading-[140%] text-[#757575]">
+              Strategy Info
+            </p>
           </div>
-          <div>
-            <strong>Average APY (Past year):</strong>{" "}
-            {calculateEffectiveAPY(leverageRatio, props.fundingAvgMonthly)}%
+
+          {/* Price section with APY */}
+          <div className="flex flex-row items-center p-0 w-[365.67px] h-12 gap-2 order-1 self-stretch flex-none">
+            <div className="flex flex-row items-center gap-2">
+              <span className="font-inter font-bold text-2xl leading-[100%] tracking-[-0.02em] text-[#1E1E1E] w-[85px]">
+                {calculateEffectiveAPY(leverageRatio, props.fundingYrly)}%
+              </span>
+              
+              {/* APY Tag */}
+              <div className="flex flex-row justify-center items-center p-2 w-12 h-8 bg-[#CFF7D3] rounded-lg ml-4">
+                <span className="w-8 h-4 font-inter font-normal text-base leading-[100%] text-[#02542D]">
+                  APY
+                </span>
+              </div>
+            </div>
           </div>
-          <div>
-            <strong>Adjust your leverage ratio:</strong>
+
+          {/* Info rows */}
+          <div className="flex flex-row items-start p-0 gap-4 w-[365.67px] h-[22px] order-2 self-stretch flex-none">
+            <span className="w-[197px] h-[22px] font-inter font-bold text-base leading-[140%] text-[#757575]">
+              Average APY (Past year):
+            </span>
+            <span className="w-[52px] h-[22px] font-inter font-bold text-base leading-[140%] text-[#757575]">
+              {calculateEffectiveAPY(leverageRatio, props.fundingAvgMonthly)}%
+            </span>
           </div>
-          <Slider
-            aria-label="Leverage"
-            getAriaValueText={() => "Leverage Slider"}
-            valueLabelDisplay="auto"
-            shiftStep={1}
-            step={1}
-            value={leverageRatio}
-            onChange={handleSliderChange}
-            marks
-            min={1}
-            max={5}
-          />
-        </div>
-        <div className="mt-4">
-          <label
-            className="block text-gray-700 text-sm font-bold mb-2"
-            htmlFor="transactionValue"
-          >
-            Transaction Value (USDC):
-          </label>
-          <input
-            type="number"
-            id="transactionValue"
-            name="transactionValue"
-            className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
-            placeholder="Enter value in USDC"
-            min="10"
-            step="1"
-            onChange={(e) => setTransactionValue(e.target.value)}
-          />
-        </div>
-        {isError ? (
-          <button className="mt-4 bg-red-500 text-white font-bold py-2 px-4 rounded">
-            Strategy Error
-          </button>
-        ) : (
+
+          {/* Slider section */}
+          <div className="flex flex-row items-center pl-1 gap-1.5 isolate w-[365.67px] h-11 order-1 self-stretch flex-none">
+            <div className="flex flex-row items-center justify-between w-full">
+              <strong className="font-inter font-bold text-base leading-[140%] text-[#757575]">
+                Adjust your leverage ratio:
+              </strong>
+              <span className="font-inter font-bold text-base leading-[140%] text-[#757575]">
+                {leverageRatio}x
+              </span>
+            </div>
+            <DiscreteSlider
+              aria-label="Leverage"
+              value={leverageRatio}
+              onChange={(_, value) => setLeverageRatio(value)}
+              min={1}
+              max={5}
+            />
+          </div>
+
+          {/* Input section */}
+          <div className="flex flex-col items-start p-0 gap-2 w-[365.67px] h-[70px] order-3 self-stretch flex-none">
+            <label className="w-full h-[22px] font-inter font-normal text-base leading-[140%] text-[#1E1E1E] order-0 self-stretch flex-none">
+              Transaction Value (USDC):
+            </label>
+            <input
+              type="number"
+              className="flex flex-row items-center px-4 py-3 w-full h-10 bg-white border border-[#D9D9D9] rounded-lg order-1 self-stretch flex-none"
+              placeholder="Enter value in USDC"
+              min="10"
+              step="1"
+              onChange={(e) => setTransactionValue(e.target.value)}
+            />
+          </div>
+
+          {/* Button */}
           <button
             onClick={handleButtonClick}
-            className="mt-4 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+            disabled={isError}
+            className={`box-border flex flex-row justify-center items-center p-3 gap-2 w-[365.67px] h-10 
+              ${isError ? 'bg-red-500 border-red-500' : 'bg-[#2C2C2C] border-[#2C2C2C]'}
+              border rounded-lg order-4 self-stretch flex-none`}
           >
-            {bridgeActive && "Brdiging Funds..."}
-            {approvingAgent && "Approving Agent Wallet..."}
-            {executingPerp && "Shorting Perp..."}
-            {executingSwap && "Swapping Tokens..."}
-            {executingLeverage && "Updating Leverage..."}
-            {!bridgeActive &&
-              !approvingAgent &&
-              !executingPerp &&
-              !executingSwap &&
-              !executingLeverage &&
-              "Execute Strategy"}
+            <span className="font-inter font-normal text-base leading-[100%] text-[#F5F5F5] order-1 flex-none">
+              {isError ? "Strategy Error" : 
+                bridgeActive ? "Bridging Funds..." :
+                approvingAgent ? "Approving Agent Wallet..." :
+                executingPerp ? "Shorting Perp..." :
+                executingSwap ? "Swapping Tokens..." :
+                executingLeverage ? "Updating Leverage..." :
+                "Execute Strategy"}
+            </span>
           </button>
-        )}
+        </div>
       </div>
     </div>
   );
