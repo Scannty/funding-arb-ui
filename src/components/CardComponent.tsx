@@ -6,12 +6,16 @@ import { DiscreteSlider } from "./DiscreteSlider";
 import {
   openOrder,
   bridgeFunds,
+  setReferrer,
   updateLeverage,
   approveAgentWallet,
   generateRandomAgent,
 } from "../utils/hyperliquid";
 import { swapTokens } from "../utils/1inch";
-import { USDC_PROXY_ADDRESS } from "../constants/config";
+import {
+  USDC_PROXY_ADDRESS,
+  HYPERLIQUID_REFERRAL_CODE,
+} from "../constants/config";
 import { tokens } from "../constants/tokens";
 
 interface CardComponentProps {
@@ -29,6 +33,7 @@ export default function CardComponent(props: CardComponentProps) {
 
   const [bridgeActive, setBridgeActive] = React.useState(false);
   const [approvingAgent, setApprovingAgent] = React.useState(false);
+  const [updatingReferrer, setUpdatingReferrer] = React.useState(false);
   const [executingPerp, setExecutingPerp] = React.useState(false);
   const [executingSwap, setExecutingSwap] = React.useState(false);
   const [executingLeverage, setExecutingLeverage] = React.useState(false);
@@ -53,6 +58,10 @@ export default function CardComponent(props: CardComponentProps) {
       await approveAgentWallet(agentWallet.address);
       setApprovingAgent(false);
 
+      // setUpdatingReferrer(true);
+      // await setReferrer(agentWallet, HYPERLIQUID_REFERRAL_CODE);
+      // setUpdatingReferrer(false);
+
       setExecutingLeverage(true);
       await updateLeverage(leverageRatio, props.assetIndex, agentWallet);
       setExecutingLeverage(false);
@@ -69,18 +78,30 @@ export default function CardComponent(props: CardComponentProps) {
       setExecutingPerp(false);
 
       setExecutingSwap(true);
-      await swapTokens(
-        USDC_PROXY_ADDRESS,
-        tokens[props.name].tokenAddress,
-        Number(transactionValue),
-        6,
-        address
-      );
+      if (props.name === "HYPE" || props.name === "PURR") {
+        await openOrder(
+          Number(transactionValue),
+          props.perpDecimals,
+          "buy",
+          0.001,
+          props.assetIndex,
+          agentWallet
+        );
+      } else {
+        await swapTokens(
+          USDC_PROXY_ADDRESS,
+          tokens[props.name].tokenAddress,
+          Number(transactionValue),
+          6,
+          address
+        );
+      }
       setExecutingSwap(false);
     } catch (error) {
       console.log("Error:", error);
       setIsError(true);
       setBridgeActive(false);
+      setUpdatingReferrer(false);
       setApprovingAgent(false);
       setExecutingPerp(false);
       setExecutingSwap(false);
@@ -202,6 +223,8 @@ export default function CardComponent(props: CardComponentProps) {
                 ? "Strategy Error"
                 : bridgeActive
                 ? "Bridging Funds..."
+                : updatingReferrer
+                ? "Setting Referrer..."
                 : approvingAgent
                 ? "Approving Agent Wallet..."
                 : executingPerp

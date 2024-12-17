@@ -113,6 +113,41 @@ export async function bridgeFunds(address: string, amount: string) {
   }
 }
 
+export async function setReferrer(agentWallet: ethers.Wallet, code: string) {
+  const action = {
+    type: "setReferrer",
+    referrer: code,
+  };
+
+  const nonce = Date.now();
+
+  try {
+    console.log("Signing message...");
+    const signature = await _signL1Action(action, nonce, true, agentWallet);
+    console.log("Message signed!");
+    const res = await fetch("https://api.hyperliquid.xyz/exchange", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        action,
+        nonce,
+        signature,
+      }),
+    });
+
+    const data = await res.json();
+    if (data.status === "err") {
+      throw new Error(data.response);
+    }
+
+    console.log("Referrer set!");
+  } catch (error) {
+    console.log("Error ocurred while setting the referrer!: ", error);
+  }
+}
+
 export async function openOrder(
   amount: number,
   perpDecimals: number,
@@ -176,8 +211,8 @@ export async function openOrder(
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        action: action,
-        nonce: nonce,
+        action,
+        nonce,
         signature,
       }),
     });
