@@ -1,8 +1,7 @@
 import React from "react";
 import { useAccount, useSigner } from "wagmi";
-// import { Slider } from "@mui/material";
 import { TokenIcon } from "@web3icons/react";
-import { DiscreteSlider } from './DiscreteSlider';
+import { DiscreteSlider } from "./DiscreteSlider";
 
 import {
   openOrder,
@@ -39,21 +38,15 @@ export default function CardComponent(props: CardComponentProps) {
 
   const [isError, setIsError] = React.useState(false);
 
-  // function handleSliderChange(event: Event, newValue: number | number[]) {
-  //   if (typeof newValue === "number") {
-  //     setLeverageRatio(newValue);
-  //   }
-  // }
-
   async function handleButtonClick() {
     if (!address || !signer) {
       alert("Please connect your wallet");
       return;
     }
     try {
-      setBridgeActive(true);
-      await bridgeFunds(address, transactionValue);
-      setBridgeActive(false);
+      // setBridgeActive(true);
+      // await bridgeFunds(address, transactionValue);
+      // setBridgeActive(false);
 
       setApprovingAgent(true);
       const agentWallet = generateRandomAgent();
@@ -88,6 +81,7 @@ export default function CardComponent(props: CardComponentProps) {
       console.log("Error:", error);
       setIsError(true);
       setBridgeActive(false);
+      setApprovingAgent(false);
       setExecutingPerp(false);
       setExecutingSwap(false);
       setTimeout(() => {
@@ -96,36 +90,11 @@ export default function CardComponent(props: CardComponentProps) {
     }
   }
 
-  // async function storeTradeData(
-  //   userAddress: string,
-  //   perpExecutionPrice: number,
-  //   spotExecutionPrice: number
-  // ): Promise<void> {
-  //   // Store trade data
-  //   const res = await fetch("http://localhost:8000/storeTradeData", {
-  //     method: "POST",
-  //     headers: {
-  //       "Content-Type": "application/json",
-  //     },
-  //     body: JSON.stringify({
-  //       userAddress,
-  //       tradeInfo: {
-  //         perpExecutionPrice,
-  //         spotExecutionPrice,
-  //         transactionValue,
-  //       },
-  //     }),
-  //   });
-
-  //   const data = await res.json();
-  //   console.log(data);
-  // }
-
   function calculateEffectiveAPY(leverageRatio: number, fundingRate: number) {
     const effectiveAPY = (fundingRate * leverageRatio) / (1 + leverageRatio);
     return effectiveAPY.toFixed(2);
   }
-  
+
   return (
     <div className="box-border flex flex-col items-start p-4 w-full sm:w-[397.67px] min-w-[320px] max-w-[400px] h-auto sm:h-[650px] bg-white border border-[#757575] gap-4">
       {/* Product Image */}
@@ -139,7 +108,7 @@ export default function CardComponent(props: CardComponentProps) {
         )}
         <TokenIcon symbol="usdc" variant="branded" size={96} />
       </div>
-  
+
       {/* Column section */}
       <div className="flex flex-col justify-center items-start p-0 w-full sm:w-[365.67px] gap-6 order-1 self-stretch">
         {/* Body section */}
@@ -153,14 +122,14 @@ export default function CardComponent(props: CardComponentProps) {
               Strategy Info
             </p>
           </div>
-  
+
           {/* Price section with APY */}
           <div className="flex flex-row items-center p-0 w-full gap-2 order-1 self-stretch">
             <div className="flex flex-row items-center gap-2">
               <span className="font-inter font-bold text-2xl leading-[100%] tracking-[-0.02em] text-[#1E1E1E] w-auto sm:w-[85px]">
                 {calculateEffectiveAPY(leverageRatio, props.fundingYrly)}%
               </span>
-              
+
               {/* APY Tag */}
               <div className="flex flex-row justify-center items-center p-2 w-12 h-8 bg-[#CFF7D3] rounded-lg ml-4">
                 <span className="w-8 h-4 font-inter font-normal text-base leading-[100%] text-[#02542D]">
@@ -169,7 +138,7 @@ export default function CardComponent(props: CardComponentProps) {
               </div>
             </div>
           </div>
-  
+
           {/* Info rows */}
           <div className="flex flex-row items-start p-0 gap-4 w-full order-2 self-stretch">
             <span className="font-inter font-bold text-base leading-[140%] text-[#757575] flex-grow">
@@ -179,7 +148,7 @@ export default function CardComponent(props: CardComponentProps) {
               {calculateEffectiveAPY(leverageRatio, props.fundingAvgMonthly)}%
             </span>
           </div>
-  
+
           {/* Slider section */}
           <div className="flex flex-col w-full gap-2 order-1 self-stretch">
             <div className="flex flex-row items-center justify-between w-full">
@@ -200,7 +169,7 @@ export default function CardComponent(props: CardComponentProps) {
               />
             </div>
           </div>
-  
+
           {/* Input section */}
           <div className="flex flex-col items-start p-0 gap-2 w-full order-3 self-stretch">
             <label className="w-full font-inter font-normal text-base leading-[140%] text-[#1E1E1E]">
@@ -215,23 +184,33 @@ export default function CardComponent(props: CardComponentProps) {
               onChange={(e) => setTransactionValue(e.target.value)}
             />
           </div>
-  
+
           {/* Button */}
           <button
             onClick={handleButtonClick}
             disabled={isError}
             className={`box-border flex flex-row justify-center items-center p-3 gap-2 w-full
-              ${isError ? 'bg-red-500 border-red-500' : 'bg-[#2C2C2C] border-[#2C2C2C]'}
+              ${
+                isError
+                  ? "bg-red-500 border-red-500"
+                  : "bg-[#2C2C2C] border-[#2C2C2C]"
+              }
               border rounded-lg order-4 self-stretch`}
           >
             <span className="font-inter font-normal text-base leading-[100%] text-[#F5F5F5]">
-              {isError ? "Strategy Error" : 
-                bridgeActive ? "Bridging Funds..." :
-                approvingAgent ? "Approving Agent Wallet..." :
-                executingPerp ? "Shorting Perp..." :
-                executingSwap ? "Swapping Tokens..." :
-                executingLeverage ? "Updating Leverage..." :
-                "Execute Strategy"}
+              {isError
+                ? "Strategy Error"
+                : bridgeActive
+                ? "Bridging Funds..."
+                : approvingAgent
+                ? "Approving Agent Wallet..."
+                : executingPerp
+                ? "Shorting Perp..."
+                : executingSwap
+                ? "Swapping Tokens..."
+                : executingLeverage
+                ? "Updating Leverage..."
+                : "Execute Strategy"}
             </span>
           </button>
         </div>
