@@ -30,7 +30,7 @@ export function DiscreteSlider({
   };
 
   return (
-    <div className="relative w-[365.67px] h-11">
+    <div className="relative h-11">
       {/* Track and dots container */}
       <div 
         ref={trackRef}

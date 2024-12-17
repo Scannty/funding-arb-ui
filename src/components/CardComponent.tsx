@@ -125,11 +125,11 @@ export default function CardComponent(props: CardComponentProps) {
     const effectiveAPY = (fundingRate * leverageRatio) / (1 + leverageRatio);
     return effectiveAPY.toFixed(2);
   }
-
+  
   return (
-    <div className="box-border flex flex-col items-start p-4 w-[397.67px] min-w-[320px] max-w-[400px] h-[650px] bg-white border border-[#757575] gap-4">
+    <div className="box-border flex flex-col items-start p-4 w-full sm:w-[397.67px] min-w-[320px] max-w-[400px] h-auto sm:h-[650px] bg-white border border-[#757575] gap-4">
       {/* Product Image */}
-      <div className="flex justify-center items-center w-[365.67px] h-[200px]">
+      <div className="flex justify-center items-center w-full sm:w-[365.67px] h-[200px]">
         {tokens[props.name] && (
           <TokenIcon
             symbol={tokens[props.name].iconSymbol}
@@ -139,25 +139,25 @@ export default function CardComponent(props: CardComponentProps) {
         )}
         <TokenIcon symbol="usdc" variant="branded" size={96} />
       </div>
-
+  
       {/* Column section */}
-      <div className="flex flex-col justify-center items-start p-0 w-[365.67px] h-[233px] gap-6 order-1 self-stretch flex-none">
+      <div className="flex flex-col justify-center items-start p-0 w-full sm:w-[365.67px] gap-6 order-1 self-stretch">
         {/* Body section */}
-        <div className="flex flex-col items-start p-0 w-[365.67px] h-[207px] gap-4 order-0 self-stretch flex-none">
+        <div className="flex flex-col items-start p-0 w-full gap-4 order-0 self-stretch">
           {/* Product Info */}
-          <div className="relative w-[368px] h-[67px] order-0 flex-none">
-            <h2 className="absolute w-[149px] h-[29px] left-0 top-0 font-inter font-semibold text-2xl leading-[120%] tracking-[-0.02em] text-[#1E1E1E]">
+          <div className="relative w-full sm:w-[368px] order-0">
+            <h2 className="font-inter font-semibold text-2xl leading-[120%] tracking-[-0.02em] text-[#1E1E1E]">
               {props.name}
             </h2>
-            <p className="absolute w-[368px] h-[22px] left-0 top-[45px] font-inter font-normal text-base leading-[140%] text-[#757575]">
+            <p className="font-inter font-normal text-base leading-[140%] text-[#757575] mb-[25px]">
               Strategy Info
             </p>
           </div>
-
+  
           {/* Price section with APY */}
-          <div className="flex flex-row items-center p-0 w-[365.67px] h-12 gap-2 order-1 self-stretch flex-none">
+          <div className="flex flex-row items-center p-0 w-full gap-2 order-1 self-stretch">
             <div className="flex flex-row items-center gap-2">
-              <span className="font-inter font-bold text-2xl leading-[100%] tracking-[-0.02em] text-[#1E1E1E] w-[85px]">
+              <span className="font-inter font-bold text-2xl leading-[100%] tracking-[-0.02em] text-[#1E1E1E] w-auto sm:w-[85px]">
                 {calculateEffectiveAPY(leverageRatio, props.fundingYrly)}%
               </span>
               
@@ -169,19 +169,19 @@ export default function CardComponent(props: CardComponentProps) {
               </div>
             </div>
           </div>
-
+  
           {/* Info rows */}
-          <div className="flex flex-row items-start p-0 gap-4 w-[365.67px] h-[22px] order-2 self-stretch flex-none">
-            <span className="w-[197px] h-[22px] font-inter font-bold text-base leading-[140%] text-[#757575]">
+          <div className="flex flex-row items-start p-0 gap-4 w-full order-2 self-stretch">
+            <span className="font-inter font-bold text-base leading-[140%] text-[#757575] flex-grow">
               Average APY (Past year):
             </span>
-            <span className="w-[52px] h-[22px] font-inter font-bold text-base leading-[140%] text-[#757575]">
+            <span className="font-inter font-bold text-base leading-[140%] text-[#757575]">
               {calculateEffectiveAPY(leverageRatio, props.fundingAvgMonthly)}%
             </span>
           </div>
-
+  
           {/* Slider section */}
-          <div className="flex flex-row items-center pl-1 gap-1.5 isolate w-[365.67px] h-11 order-1 self-stretch flex-none">
+          <div className="flex flex-col w-full gap-2 order-1 self-stretch">
             <div className="flex flex-row items-center justify-between w-full">
               <strong className="font-inter font-bold text-base leading-[140%] text-[#757575]">
                 Adjust your leverage ratio:
@@ -190,39 +190,41 @@ export default function CardComponent(props: CardComponentProps) {
                 {leverageRatio}x
               </span>
             </div>
-            <DiscreteSlider
-              aria-label="Leverage"
-              value={leverageRatio}
-              onChange={(_, value) => setLeverageRatio(value)}
-              min={1}
-              max={5}
-            />
+            <div className="w-full">
+              <DiscreteSlider
+                aria-label="Leverage"
+                value={leverageRatio}
+                onChange={(_, value) => setLeverageRatio(value)}
+                min={1}
+                max={5}
+              />
+            </div>
           </div>
-
+  
           {/* Input section */}
-          <div className="flex flex-col items-start p-0 gap-2 w-[365.67px] h-[70px] order-3 self-stretch flex-none">
-            <label className="w-full h-[22px] font-inter font-normal text-base leading-[140%] text-[#1E1E1E] order-0 self-stretch flex-none">
+          <div className="flex flex-col items-start p-0 gap-2 w-full order-3 self-stretch">
+            <label className="w-full font-inter font-normal text-base leading-[140%] text-[#1E1E1E]">
               Transaction Value (USDC):
             </label>
             <input
               type="number"
-              className="flex flex-row items-center px-4 py-3 w-full h-10 bg-white border border-[#D9D9D9] rounded-lg order-1 self-stretch flex-none"
+              className="flex flex-row items-center px-4 py-3 w-full h-10 bg-white border border-[#D9D9D9] rounded-lg"
               placeholder="Enter value in USDC"
               min="10"
               step="1"
               onChange={(e) => setTransactionValue(e.target.value)}
             />
           </div>
-
+  
           {/* Button */}
           <button
             onClick={handleButtonClick}
             disabled={isError}
-            className={`box-border flex flex-row justify-center items-center p-3 gap-2 w-[365.67px] h-10 
+            className={`box-border flex flex-row justify-center items-center p-3 gap-2 w-full
               ${isError ? 'bg-red-500 border-red-500' : 'bg-[#2C2C2C] border-[#2C2C2C]'}
-              border rounded-lg order-4 self-stretch flex-none`}
+              border rounded-lg order-4 self-stretch`}
           >
-            <span className="font-inter font-normal text-base leading-[100%] text-[#F5F5F5] order-1 flex-none">
+            <span className="font-inter font-normal text-base leading-[100%] text-[#F5F5F5]">
               {isError ? "Strategy Error" : 
                 bridgeActive ? "Bridging Funds..." :
                 approvingAgent ? "Approving Agent Wallet..." :

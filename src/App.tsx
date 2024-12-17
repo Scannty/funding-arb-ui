@@ -6,7 +6,7 @@ import Footer from "./components/Footer";
 import CardComponent from "./components/CardComponent";
 import LoadingSpinner from "./components/LoadingSpinner";
 import { tokens } from "./constants/tokens";
-import PortfolioInfo from "./components/PortfolioInfo";
+// import PortfolioInfo from "./components/PortfolioInfo";
 import { getAccountSummary } from "./utils/hyperliquid";
 import { USDC_PROXY_ADDRESS } from "./constants/config";
 
@@ -67,80 +67,80 @@ function App() {
   }, []);
 
   return (
-      <div className="flex flex-col min-h-screen">
-        <Header />
-        {loading ? (
-          <div className="flex justify-center items-center">
-            <LoadingSpinner />
-          </div>
-        ) : (
-          <>
-            <main>
-              {/* Hero section with title and stats */}
-              <div className="flex flex-col items-center py-40 px-16 h-[452px] bg-[#F5F5F5] relative">
-                {/* Title */}
-                <h1 className="w-[707px] h-[86px] font-inter font-bold text-[72px] leading-[120%] text-center tracking-[-0.03em] text-[#1E1E1E]">
-                  Funding Strategy
-                </h1>
+    <div className="flex flex-col w-full min-h-screen">
+      <Header />
+      {loading ? (
+        <div className="flex justify-center items-center">
+          <LoadingSpinner />
+        </div>
+      ) : (
+        <>
+          <main>
+            {/* Hero section with title and stats */}
+            <div className="flex flex-col items-center py-20 sm:pt-40 px-4 sm:px-16 min-h-[452px] bg-[#F5F5F5] relative w-full">
+              {/* Title */}
+              <h1 className="font-inter font-bold text-4xl sm:text-[72px] leading-[120%] text-center tracking-[-0.03em] text-[#1E1E1E] mb-8 sm:mb-0">
+                Funding Strategy
+              </h1>
 
-                {/* Portfolio Info */}    
-                <div className="absolute bottom-16 w-full max-w-[1305px] mt-32">
-                  <h2 className="font-inter font-semibold text-2xl leading-[120%] tracking-[-0.02em] text-[#1E1E1E] mb-6 text-center">
-                    Current Portfolio Statistics
-                  </h2>
-                  <div className="flex justify-between w-full">
-                    <div className="text-center">
-                      <p className="font-inter font-normal text-sm text-[#757575] mb-2">Hyperliquid Balance</p>
-                      <p className="font-inter font-semibold text-lg text-[#1E1E1E]">{hyperliquidBalance}</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="font-inter font-normal text-sm text-[#757575] mb-2">USDC Balance</p>
-                      <p className="font-inter font-semibold text-lg text-[#1E1E1E]">{usdcBalance}</p>
-                    </div>
-                    {openPositions.map((position: any) => (
-                      <div key={position.position.coin} className="flex gap-8">
-                        <div className="text-center">
-                          <p className="font-inter font-normal text-sm text-[#757575] mb-2">Open Positions</p>
-                          <p className="font-inter font-semibold text-lg text-[#1E1E1E]">{position.position.coin}</p>
-                        </div>
-                        <div className="text-center">
-                          <p className="font-inter font-normal text-sm text-[#757575] mb-2">APY</p>
-                          <p className="font-inter font-semibold text-lg text-[#1E1E1E]">
-                            {Number(position.position.returnOnEquity * 100).toFixed(2)}%
-                          </p>
-                        </div>
+              {/* Portfolio Info */}    
+              <div className="w-full max-w-[1305px] mt-8 sm:mt-32 px-4 sm:px-0">
+                <h2 className="font-inter font-semibold text-xl sm:text-2xl leading-[120%] tracking-[-0.02em] text-[#1E1E1E] mb-6 text-center">
+                  Current Portfolio Statistics
+                </h2>
+                <div className="flex flex-col sm:flex-row justify-between w-full gap-4 sm:gap-0">
+                  <div className="text-center">
+                    <p className="font-inter font-normal text-sm text-[#757575] mb-2">Hyperliquid Balance</p>
+                    <p className="font-inter font-semibold text-lg text-[#1E1E1E]">{hyperliquidBalance}</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="font-inter font-normal text-sm text-[#757575] mb-2">USDC Balance</p>
+                    <p className="font-inter font-semibold text-lg text-[#1E1E1E]">{usdcBalance}</p>
+                  </div>
+                  {openPositions.map((position: any) => (
+                    <div key={position.position.coin} className="flex flex-col sm:flex-row gap-8">
+                      <div className="text-center">
+                        <p className="font-inter font-normal text-sm text-[#757575] mb-2">Open Positions</p>
+                        <p className="font-inter font-semibold text-lg text-[#1E1E1E]">{position.position.coin}</p>
                       </div>
-                    ))}
-                    <div className="text-center">
-                      <p className="font-inter font-normal text-sm text-[#757575] mb-2">Portfolio Value</p>
-                      <p className="font-inter font-semibold text-lg text-[#1E1E1E]">{portfolioValue}</p>
+                      <div className="text-center">
+                        <p className="font-inter font-normal text-sm text-[#757575] mb-2">APY</p>
+                        <p className="font-inter font-semibold text-lg text-[#1E1E1E]">
+                          {Number(position.position.returnOnEquity * 100).toFixed(2)}%
+                        </p>
+                      </div>
                     </div>
+                  ))}
+                  <div className="text-center">
+                    <p className="font-inter font-normal text-sm text-[#757575] mb-2">Portfolio Value</p>
+                    <p className="font-inter font-semibold text-lg text-[#1E1E1E]">{portfolioValue}</p>
                   </div>
                 </div>
               </div>
+            </div>
 
-              {/* Card grid section */}
-              <div className="flex flex-col items-center py-16 px-8 gap-10 bg-white">
-                <div className="grid-cols-3 gap-x-24 gap-y-16 w-full place-items-center flex flex-wrap justify-center">
-                  {perpsInfo.map((perp, index) => (
-                    <CardComponent
-                      key={index}
-                      name={perp.name}
-                      perpDecimals={perp.decimals}
-                      assetIndex={perp.assetIndex}
-                      fundingHrly={perp.fundingHrly}
-                      fundingYrly={perp.fundingYrly}
-                      fundingAvgMonthly={perp.fundingAvgMonthly}
-                    />
-                  ))}
-                </div>
+            {/* Card grid section */}
+            <div className="flex flex-col items-center py-16 px-8 gap-10 bg-white">
+              <div className="grid-cols-3 gap-x-24 gap-y-16 w-full place-items-center flex flex-wrap justify-center">
+                {perpsInfo.map((perp, index) => (
+                  <CardComponent
+                    key={index}
+                    name={perp.name}
+                    perpDecimals={perp.decimals}
+                    assetIndex={perp.assetIndex}
+                    fundingHrly={perp.fundingHrly}
+                    fundingYrly={perp.fundingYrly}
+                    fundingAvgMonthly={perp.fundingAvgMonthly}
+                  />
+                ))}
               </div>
-            </main>
-          </>
-        )}
-        <Footer />
-      </div>
-    );
+            </div>
+          </main>
+          <Footer />
+        </>
+      )}
+    </div>
+  );
 }
 
 export default App;
