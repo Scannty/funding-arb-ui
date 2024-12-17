@@ -55,7 +55,7 @@ export async function swapTokens(
       slippage: "0.5",
     });
 
-    const response = await fetch(`${API_BASE_URL}/dex/1inch/quote?${params}`);
+    const response = await fetch(`${API_BASE_URL}/dex/1inch/swap?${params}`);
     if (!response.ok) {
       const errorText = await response.text();
       throw new Error(`Swap quote failed: ${errorText}`);
