@@ -11,7 +11,7 @@ import {
   approveAgentWallet,
   generateRandomAgent,
 } from "../utils/hyperliquid";
-import { swapTokens } from "../utils/univ3";
+import { swapTokens } from "../utils/1inch";
 import { USDC_PROXY_ADDRESS } from "../constants/config";
 import { tokens } from "../constants/tokens";
 
