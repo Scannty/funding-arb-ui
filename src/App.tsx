@@ -7,6 +7,7 @@ import CardComponent from "./components/CardComponent";
 import LoadingSpinner from "./components/LoadingSpinner";
 import { tokens } from "./constants/tokens";
 import PortfolioInfo from "./components/PortfolioInfo";
+import { getPortfolioInfo } from "./utils/database";
 import { getAccountSummary } from "./utils/hyperliquid";
 import { USDC_PROXY_ADDRESS } from "./constants/config";
 
@@ -26,6 +27,7 @@ function App() {
   const [hyperliquidBalance, setHyperLiquidBalance] = React.useState(0);
   const [portfolioValue, setPortfolioValue] = React.useState(0);
   const [openPositions, setOpenPositions] = React.useState<any>([]);
+  const [portfolio, setPortfolio] = React.useState<any>([]);
 
   const { address } = useAccount();
   const { data } = useBalance({
@@ -39,6 +41,9 @@ function App() {
       setUsdcBalance(Number((data.value.toNumber() / 10 ** 6).toFixed(2)));
     }
 
+    if (!address) return;
+
+    console.log("heehsk");
     const perps = Object.keys(tokens);
     perps.push("HYPE", "PURR");
     const queryString = `perps=${perps.join(",")}`;
@@ -47,6 +52,10 @@ function App() {
         "http://localhost:8000/getPerpsInfo?" + queryString
       );
       const data = await res.json();
+
+      const portfolio = await getPortfolioInfo(address);
+
+      setPortfolio(portfolio);
       setPerpsInfo(data);
       setIsLoading(false);
     };
@@ -82,6 +91,7 @@ function App() {
               hyperliquidBalance={hyperliquidBalance}
               portfolioValue={portfolioValue}
               openPositions={openPositions}
+              portfolio={portfolio}
             />
 
             {/* Card grid section */}

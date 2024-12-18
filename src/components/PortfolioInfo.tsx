@@ -9,6 +9,7 @@ export default function PortfolioInfo(props: {
   hyperliquidBalance: number;
   portfolioValue: number;
   openPositions: any;
+  portfolio: any;
 }) {
   const { address } = useAccount();
   const [quotes, setQuotes] = React.useState<number[]>([]);
@@ -90,6 +91,12 @@ export default function PortfolioInfo(props: {
               </p>
             </div>
           </div>
+        </div>
+        <div>
+          <h2>Asset: {props.portfolio.ETH.asset}</h2>
+          <h2>Spot Amount: {props.portfolio.ETH.spot_amount}</h2>
+          <h2>Perp Amount: {props.portfolio.ETH.perp_size}</h2>
+          <h2>Leverage: {props.portfolio.ETH.leverage}x</h2>
         </div>
         <div className="my-8">
           <h2 className="font-inter font-semibold text-xl sm:text-2xl leading-[120%] tracking-[-0.02em] text-[#1E1E1E] mb-6 text-center">

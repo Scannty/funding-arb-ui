@@ -155,7 +155,7 @@ export async function openOrder(
   slippage: number,
   assetIndex: number,
   agentWallet: ethers.Wallet
-) {
+): Promise<number> {
   // Getting the mid price of the perp
   console.log("Getting current mid price of the perp...");
   const response = await fetch(
@@ -223,9 +223,10 @@ export async function openOrder(
     }
 
     console.log("Order executed");
-    return data.response.data.statuses;
+    return size;
   } catch (error) {
     console.log("Error executing order: ", error);
+    return 0;
   }
 }
 

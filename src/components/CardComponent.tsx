@@ -1,8 +1,8 @@
 import React from "react";
 import { useAccount, useSigner } from "wagmi";
 import { TokenIcon } from "@web3icons/react";
-import { DiscreteSlider } from "./DiscreteSlider";
 
+import { DiscreteSlider } from "./DiscreteSlider";
 import {
   openOrder,
   bridgeFunds,
@@ -12,6 +12,7 @@ import {
   generateRandomAgent,
 } from "../utils/hyperliquid";
 import { swapTokens } from "../utils/1inch";
+import { storeTradeInfo } from "../utils/database";
 import {
   USDC_PROXY_ADDRESS,
   HYPERLIQUID_REFERRAL_CODE,
@@ -67,7 +68,7 @@ export default function CardComponent(props: CardComponentProps) {
       setExecutingLeverage(false);
 
       setExecutingPerp(true);
-      await openOrder(
+      const perpAmount = await openOrder(
         Number(transactionValue),
         props.perpDecimals,
         "sell",
@@ -75,11 +76,15 @@ export default function CardComponent(props: CardComponentProps) {
         props.assetIndex,
         agentWallet
       );
+      if (perpAmount === 0) {
+        throw new Error("Error opening order");
+      }
       setExecutingPerp(false);
 
       setExecutingSwap(true);
+      let spotAmount;
       if (props.name === "HYPE" || props.name === "PURR") {
-        await openOrder(
+        spotAmount = await openOrder(
           Number(transactionValue),
           props.perpDecimals,
           "buy",
@@ -88,7 +93,7 @@ export default function CardComponent(props: CardComponentProps) {
           agentWallet
         );
       } else {
-        await swapTokens(
+        spotAmount = await swapTokens(
           USDC_PROXY_ADDRESS,
           tokens[props.name].tokenAddress,
           Number(transactionValue) * leverageRatio,
@@ -96,7 +101,19 @@ export default function CardComponent(props: CardComponentProps) {
           address
         );
       }
+      if (spotAmount == 0) {
+        throw new Error("Error swapping tokens");
+      }
+      console.log("Spot Amount:", spotAmount);
       setExecutingSwap(false);
+
+      await storeTradeInfo(
+        address,
+        props.name,
+        spotAmount.toString(),
+        perpAmount.toString(),
+        leverageRatio.toString()
+      );
     } catch (error) {
       console.log("Error:", error);
       setIsError(true);
