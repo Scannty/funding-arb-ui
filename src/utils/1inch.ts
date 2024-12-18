@@ -7,7 +7,7 @@ import {
   waitForTransaction,
   readContract,
 } from "wagmi/actions";
-import { BigNumber } from "ethers";
+import { BigNumber, ethers } from "ethers";
 import { parseUnits } from "ethers/lib/utils";
 import { ONE_INCH_ROUTER_ADDRESS, API_BASE_URL } from "../constants/config";
 
@@ -17,7 +17,7 @@ export async function swapTokens(
   amount: number,
   decimals: number,
   address: string
-) {
+): Promise<string> {
   try {
     const swapAmount = parseUnits(amount.toString(), decimals);
 
@@ -55,7 +55,7 @@ export async function swapTokens(
       slippage: "0.5",
     });
 
-    const response = await fetch(`${API_BASE_URL}/dex/1inch/quote?${params}`);
+    const response = await fetch(`${API_BASE_URL}/dex/1inch/swap?${params}`);
     if (!response.ok) {
       const errorText = await response.text();
       throw new Error(`Swap quote failed: ${errorText}`);
@@ -83,8 +83,27 @@ export async function swapTokens(
       throw new Error("Swap transaction failed");
     }
 
-    return txSwap.hash;
+    const amountOut = _getAmountOutFromLogs(swapReceipt.logs, tokenOut);
+    return amountOut;
   } catch (error) {
-    throw error;
+    console.log("Error:", error);
+    return "0";
   }
+}
+
+function _getAmountOutFromLogs(logs: any[], tokenOut: string): string {
+  for (const log of logs) {
+    if (log.address === tokenOut) {
+      const transferEventAbi = [
+        "event Transfer(address indexed from, address indexed to, uint256 value)",
+      ];
+      const iface = new ethers.utils.Interface(transferEventAbi);
+      const parsedLog = iface.parseLog(log);
+
+      if (parsedLog.name === "Transfer") {
+        return parsedLog.args.value.toString();
+      }
+    }
+  }
+  return "0";
 }

@@ -19,11 +19,11 @@ const root = ReactDOM.createRoot(
   document.getElementById("root") as HTMLElement
 );
 root.render(
-  <React.StrictMode>
-    <WagmiConfig client={client}>
-      <ConnectKitProvider theme="auto">
-        <App />
-      </ConnectKitProvider>
-    </WagmiConfig>
-  </React.StrictMode>
+  // <React.StrictMode>
+  <WagmiConfig client={client}>
+    <ConnectKitProvider theme="auto">
+      <App />
+    </ConnectKitProvider>
+  </WagmiConfig>
+  // </React.StrictMode>
 );

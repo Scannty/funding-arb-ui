@@ -1,17 +1,22 @@
 import React from "react";
 import { useAccount, useSigner } from "wagmi";
 import { TokenIcon } from "@web3icons/react";
-import { DiscreteSlider } from "./DiscreteSlider";
 
+import { DiscreteSlider } from "./DiscreteSlider";
 import {
   openOrder,
   bridgeFunds,
+  setReferrer,
   updateLeverage,
   approveAgentWallet,
   generateRandomAgent,
 } from "../utils/hyperliquid";
 import { swapTokens } from "../utils/1inch";
-import { USDC_PROXY_ADDRESS } from "../constants/config";
+import { storeTradeInfo } from "../utils/database";
+import {
+  USDC_PROXY_ADDRESS,
+  HYPERLIQUID_REFERRAL_CODE,
+} from "../constants/config";
 import { tokens } from "../constants/tokens";
 
 interface CardComponentProps {
@@ -29,6 +34,7 @@ export default function CardComponent(props: CardComponentProps) {
 
   const [bridgeActive, setBridgeActive] = React.useState(false);
   const [approvingAgent, setApprovingAgent] = React.useState(false);
+  const [updatingReferrer, setUpdatingReferrer] = React.useState(false);
   const [executingPerp, setExecutingPerp] = React.useState(false);
   const [executingSwap, setExecutingSwap] = React.useState(false);
   const [executingLeverage, setExecutingLeverage] = React.useState(false);
@@ -53,12 +59,16 @@ export default function CardComponent(props: CardComponentProps) {
       await approveAgentWallet(agentWallet.address);
       setApprovingAgent(false);
 
+      // setUpdatingReferrer(true);
+      // await setReferrer(agentWallet, HYPERLIQUID_REFERRAL_CODE);
+      // setUpdatingReferrer(false);
+
       setExecutingLeverage(true);
       await updateLeverage(leverageRatio, props.assetIndex, agentWallet);
       setExecutingLeverage(false);
 
       setExecutingPerp(true);
-      await openOrder(
+      const perpAmount = await openOrder(
         Number(transactionValue),
         props.perpDecimals,
         "sell",
@@ -66,21 +76,49 @@ export default function CardComponent(props: CardComponentProps) {
         props.assetIndex,
         agentWallet
       );
+      if (perpAmount === 0) {
+        throw new Error("Error opening order");
+      }
       setExecutingPerp(false);
 
       setExecutingSwap(true);
-      await swapTokens(
-        USDC_PROXY_ADDRESS,
-        tokens[props.name].tokenAddress,
-        Number(transactionValue),
-        6,
-        address
-      );
+      let spotAmount;
+      if (props.name === "HYPE" || props.name === "PURR") {
+        spotAmount = await openOrder(
+          Number(transactionValue),
+          props.perpDecimals,
+          "buy",
+          0.001,
+          props.assetIndex,
+          agentWallet
+        );
+      } else {
+        spotAmount = await swapTokens(
+          USDC_PROXY_ADDRESS,
+          tokens[props.name].tokenAddress,
+          Number(transactionValue) * leverageRatio,
+          6,
+          address
+        );
+      }
+      if (spotAmount == 0) {
+        throw new Error("Error swapping tokens");
+      }
+      console.log("Spot Amount:", spotAmount);
       setExecutingSwap(false);
+
+      await storeTradeInfo(
+        address,
+        props.name,
+        spotAmount.toString(),
+        perpAmount.toString(),
+        leverageRatio.toString()
+      );
     } catch (error) {
       console.log("Error:", error);
       setIsError(true);
       setBridgeActive(false);
+      setUpdatingReferrer(false);
       setApprovingAgent(false);
       setExecutingPerp(false);
       setExecutingSwap(false);
@@ -193,7 +231,7 @@ export default function CardComponent(props: CardComponentProps) {
               ${
                 isError
                   ? "bg-red-500 border-red-500"
-                  : "bg-[#2C2C2C] border-[#2C2C2C]"
+                  : "bg-[#313131] border-[#313131] hover:bg-black hover:border-[#1E1E1E]"
               }
               border rounded-lg order-4 self-stretch`}
           >
@@ -202,6 +240,8 @@ export default function CardComponent(props: CardComponentProps) {
                 ? "Strategy Error"
                 : bridgeActive
                 ? "Bridging Funds..."
+                : updatingReferrer
+                ? "Setting Referrer..."
                 : approvingAgent
                 ? "Approving Agent Wallet..."
                 : executingPerp
