@@ -26,6 +26,7 @@ interface CardComponentProps {
   fundingHrly: number;
   fundingYrly: number;
   fundingAvgMonthly: number;
+  hyperliquidBalance: number;
 }
 
 export default function CardComponent(props: CardComponentProps) {
@@ -56,9 +57,9 @@ export default function CardComponent(props: CardComponentProps) {
     );
 
     try {
-      // setBridgeActive(true);
-      // await bridgeFunds(address, transactionValue);
-      // setBridgeActive(false);
+      setBridgeActive(true);
+      await bridgeFunds(address, transactionValue, props.hyperliquidBalance);
+      setBridgeActive(false);
 
       setApprovingAgent(true);
       const agentWallet = generateRandomAgent();

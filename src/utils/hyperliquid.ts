@@ -39,10 +39,20 @@ export async function getAccountSummary(address: string): Promise<any> {
   return data;
 }
 
-export async function bridgeFunds(address: string, amount: string) {
+export async function bridgeFunds(
+  address: string,
+  amount: string,
+  userHyperliquidBalance: number
+) {
   try {
+    const bridgeValue = Number(amount) - userHyperliquidBalance;
+    if (bridgeValue <= 0) {
+      console.log("No need to bridge funds");
+      return;
+    }
+    const value = ethers.utils.parseUnits(bridgeValue.toString(), 6);
+
     const deadline = Math.floor(Date.now() / 1000) + 3600; // 1 hour from now
-    const value = ethers.utils.parseUnits(amount, 6); // Amount of USDC to permit (10 USDC in this example)
 
     const domain = {
       name: "USD Coin",

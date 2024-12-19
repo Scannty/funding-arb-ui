@@ -138,6 +138,7 @@ function App() {
                     fundingHrly={perp.fundingHrly}
                     fundingYrly={perp.fundingYrly}
                     fundingAvgMonthly={perp.fundingAvgMonthly}
+                    hyperliquidBalance={hyperliquidBalance}
                   />
                 ))}
               </div>
