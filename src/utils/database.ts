@@ -3,7 +3,8 @@ export async function storeTradeInfo(
   asset: string,
   spotAmount: string,
   perpAmount: string,
-  leverage: string
+  leverage: string,
+  amount: string
 ) {
   try {
     const res = await fetch(
@@ -19,6 +20,7 @@ export async function storeTradeInfo(
           spot_amount: spotAmount,
           perp_size: perpAmount,
           leverage,
+          amount,
         }),
       }
     );

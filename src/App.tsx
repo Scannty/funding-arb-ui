@@ -1,5 +1,6 @@
 import React from "react";
-import { useAccount, useBalance } from "wagmi";
+import { erc20ABI, useAccount, useBalance } from "wagmi";
+import { readContract } from "wagmi/actions";
 
 import Header from "./components/Header";
 import Footer from "./components/Footer";
@@ -22,12 +23,16 @@ function App() {
   }
 
   const [usdcBalance, setUsdcBalance] = React.useState(0);
+  const [tokensBalances, setTokensBalances] = React.useState<Object>({});
   const [perpsInfo, setPerpsInfo] = React.useState<Perp[]>([]);
   const [loading, setIsLoading] = React.useState(true);
   const [hyperliquidBalance, setHyperLiquidBalance] = React.useState(0);
   const [portfolioValue, setPortfolioValue] = React.useState(0);
+  const [hyperliquidPositions, setHyperliquidPositions] = React.useState<any>(
+    []
+  );
   const [openPositions, setOpenPositions] = React.useState<any>([]);
-  const [portfolio, setPortfolio] = React.useState<any>([]);
+  const [validPositions, setValidPositions] = React.useState(true);
 
   const { address } = useAccount();
   const { data } = useBalance({
@@ -43,23 +48,45 @@ function App() {
 
     if (!address) return;
 
-    console.log("heehsk");
     const perps = Object.keys(tokens);
     perps.push("HYPE", "PURR");
     const queryString = `perps=${perps.join(",")}`;
+
+    const fetchTokensBalances = async () => {
+      Object.entries(tokens).forEach(async ([ticker, token]) => {
+        const tokenBalance = await readContract({
+          addressOrName: token.tokenAddress,
+          chainId: 42161,
+          contractInterface: erc20ABI,
+          functionName: "balanceOf",
+          args: [address],
+        });
+
+        setTokensBalances((prev) => ({
+          ...prev,
+          [ticker]: tokenBalance,
+        }));
+      });
+    };
+
     const fetchPerpData = async () => {
       const res = await fetch(
         "http://localhost:8000/getPerpsInfo?" + queryString
       );
       const data = await res.json();
 
-      const portfolio = await getPortfolioInfo(address);
-
-      setPortfolio(portfolio);
       setPerpsInfo(data);
       setIsLoading(false);
     };
-    const fetchUserBalance = async () => {
+
+    const fetchUserPositions = async () => {
+      if (!address) return;
+      const positions = await getPortfolioInfo(address);
+
+      setOpenPositions(positions);
+    };
+
+    const fetchHyperliquidInfo = async () => {
       if (!address) return;
       const accountSummary = await getAccountSummary(address);
       setHyperLiquidBalance(
@@ -68,11 +95,13 @@ function App() {
       setPortfolioValue(
         Number(Number(accountSummary.marginSummary.accountValue).toFixed(2))
       );
-      setOpenPositions(accountSummary.assetPositions);
+      setHyperliquidPositions(accountSummary.assetPositions);
     };
 
+    fetchTokensBalances();
     fetchPerpData();
-    fetchUserBalance();
+    fetchUserPositions();
+    fetchHyperliquidInfo();
   }, []);
 
   return (
@@ -90,8 +119,11 @@ function App() {
               usdcBalance={usdcBalance}
               hyperliquidBalance={hyperliquidBalance}
               portfolioValue={portfolioValue}
+              hyperliquidPositions={hyperliquidPositions}
               openPositions={openPositions}
-              portfolio={portfolio}
+              validPositions={validPositions}
+              setValidPositions={setValidPositions}
+              tokensBalances={tokensBalances}
             />
 
             {/* Card grid section */}

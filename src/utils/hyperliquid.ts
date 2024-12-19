@@ -155,7 +155,7 @@ export async function openOrder(
   slippage: number,
   assetIndex: number,
   agentWallet: ethers.Wallet
-): Promise<number> {
+): Promise<string> {
   // Getting the mid price of the perp
   console.log("Getting current mid price of the perp...");
   const response = await fetch(
@@ -185,7 +185,7 @@ export async function openOrder(
         a: assetIndex,
         b: orderType === "buy",
         p: formattedExecutionPrice,
-        s: size.toFixed(perpDecimals).toString(),
+        s: size.toFixed(perpDecimals),
         r: false,
         t: {
           limit: {
@@ -223,10 +223,10 @@ export async function openOrder(
     }
 
     console.log("Order executed");
-    return size;
+    return size.toFixed(perpDecimals);
   } catch (error) {
     console.log("Error executing order: ", error);
-    return 0;
+    return "0";
   }
 }
 
