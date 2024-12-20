@@ -1,6 +1,7 @@
 import React from "react";
 import { useAccount } from "wagmi";
 import { BigNumber, ethers } from "ethers";
+import WarningIcon from "@mui/icons-material/Warning";
 
 import {
   approveAgentWallet,
@@ -19,9 +20,9 @@ export default function PortfolioDashboard(props: {
   portfolioValue: number;
   hyperliquidPositions: any;
   openPositions: any;
-  validPositions: boolean;
+  validPositions: any;
   perpsInfo: Perp[];
-  setValidPositions: React.Dispatch<React.SetStateAction<boolean>>;
+  setValidPositions: React.Dispatch<React.SetStateAction<any>>;
   tokensBalances: any;
 }) {
   const { address } = useAccount();
@@ -41,7 +42,10 @@ export default function PortfolioDashboard(props: {
         );
 
         if (!hyperliquidPosition) {
-          props.setValidPositions(false);
+          props.setValidPositions({
+            ...props.validPositions,
+            [position.asset]: false,
+          });
           return;
         }
 
@@ -55,10 +59,18 @@ export default function PortfolioDashboard(props: {
           "-" + position.perp_size !== hyperliquidPosition.position.szi ||
           position.leverage != hyperliquidPosition.position.leverage.value
         ) {
-          props.setValidPositions(false);
+          props.setValidPositions({
+            ...props.validPositions,
+            [position.asset]: false,
+          });
           console.log("Invalid position");
           return;
         }
+
+        props.setValidPositions({
+          ...props.validPositions,
+          [position.asset]: true,
+        });
       });
     };
 
@@ -183,17 +195,52 @@ export default function PortfolioDashboard(props: {
   }
 
   async function handleButtonClick(position: any) {
+    if (props.validPositions[position.asset] === false) {
+      if (!address) {
+        alert("Please connect your wallet");
+        return;
+      }
+      await deleteTradeInfo(address, position.asset);
+      return;
+    }
     setIsClosing(true);
     await closePosition(position);
     setIsClosing(false);
   }
 
-  if (props.perpsInfo.length != 0 && perpPrices.length != 0) {
+  const allPositionsMatch = Object.values(props.validPositions).every(
+    (valid) => valid
+  );
+
+  console.log(Object.values(props.openPositions));
+
+  if (Object.values(props.openPositions).length === 0) {
+    console.log("herree");
     return (
       <div className="bg-[#f2f2f2] p-6">
         <h1 className="text-2xl font-inter font-semibold ml-4 my-4">
-          Positions
+          No Positions opened
         </h1>
+      </div>
+    );
+  }
+
+  if (props.perpsInfo.length != 0 && perpPrices.length != 0) {
+    return (
+      <div className="bg-[#f2f2f2] p-6">
+        <div className="flex items-center gap-4 mb-4">
+          <h1 className="text-2xl font-inter font-semibold ml-4 my-4">
+            Positions
+          </h1>
+          {!allPositionsMatch && <WarningIcon color="error" fontSize="large" />}
+          {!allPositionsMatch && (
+            <h2 className="w-96 text-red-500 text-sm font-inter font-semibold">
+              Some of the positions have been changed manualy since opened.
+              Unfortunately we cannot track precisely the inforamtion on these
+              positions.
+            </h2>
+          )}
+        </div>
         <div className="overflow-x-auto ">
           <table className="min-w-full">
             <thead>
@@ -238,19 +285,30 @@ export default function PortfolioDashboard(props: {
 
                     const spotAmountOut = quotes[index];
 
-                    const positionPnL = calculatePnL(
-                      position.amount,
-                      spotAmountOut.toString(),
-                      hyperliquidPosition.position.marginUsed
-                    );
+                    let positionPnL,
+                      fundingFeeCollected,
+                      currentApy,
+                      liquidationPrice;
+                    if (hyperliquidPosition) {
+                      positionPnL = calculatePnL(
+                        position.amount,
+                        spotAmountOut.toString(),
+                        hyperliquidPosition.position.marginUsed
+                      );
+                      fundingFeeCollected =
+                        hyperliquidPosition.position.cumFunding.sinceOpen * -1;
+                      currentApy =
+                        (positionPnL / Number(position.amount)) * 100;
+                      liquidationPrice = Number(
+                        hyperliquidPosition.position.liquidationPx
+                      );
+                    } else {
+                      positionPnL = 0;
+                      fundingFeeCollected = 0;
+                      currentApy = 0;
+                      liquidationPrice = 0;
+                    }
 
-                    const fundingFeeCollected =
-                      hyperliquidPosition.position.cumFunding.sinceOpen * -1;
-                    const currentApy =
-                      (positionPnL / Number(position.amount)) * 100;
-                    const liquidationPrice = Number(
-                      hyperliquidPosition.position.liquidationPx
-                    );
                     const targetPerpInfo = props.perpsInfo.find(
                       (perp) => perp.name === position.asset
                     );
@@ -258,9 +316,14 @@ export default function PortfolioDashboard(props: {
                       //@ts-ignore
                       perpPrices[targetPerpInfo?.assetIndex]
                     );
+                    const isPositionValid =
+                      props.validPositions[position.asset];
 
                     return (
-                      <tr key={index}>
+                      <tr
+                        key={index}
+                        className={isPositionValid ? "" : "bg-red-100"}
+                      >
                         <td className="py-4 px-4 font-inter text-gray-500 font-semibold">
                           {position.asset}
                         </td>
@@ -268,47 +331,79 @@ export default function PortfolioDashboard(props: {
                           ${currentPrice.toFixed(2)}
                         </td>
                         <td className="py-4 px-4 font-inter text-gray-500 font-semibold">
-                          ${liquidationPrice.toFixed(2)}
+                          {isPositionValid
+                            ? `$${liquidationPrice.toFixed(2)}`
+                            : "N/A"}
                         </td>
                         <td className="py-4 px-4 font-inter text-gray-500 font-semibold">
-                          {position.leverage}x
+                          {isPositionValid ? `${position.leverage}x` : "N/A"}
                         </td>
                         <td className="py-4 px-4 font-inter text-gray-500 font-semibold">
-                          ${position.amount}
+                          {isPositionValid ? `$${position.amount}` : "N/A"}
                         </td>
-                        <td
-                          className={`py-4 px-4 font-inter font-semibold ${
-                            fundingFeeCollected < 0
-                              ? "text-red-500"
-                              : "text-green-500"
-                          }`}
-                        >
-                          {fundingFeeCollected >= 0 ? "+" : "-"}$
-                          {Math.abs(fundingFeeCollected).toFixed(2)}
-                        </td>
-                        <td
-                          className={`py-4 px-4 font-inter font-semibold ${
-                            positionPnL < 0 ? "text-red-500" : "text-green-500"
-                          }`}
-                        >
-                          {positionPnL >= 0 ? "+" : "-"}$
-                          {Math.abs(positionPnL).toFixed(2)}
-                        </td>
-                        <td
-                          className={`py-4 px-4 font-inter font-semibold ${
-                            currentApy < 0 ? "text-red-500" : "text-green-500"
-                          }`}
-                        >
-                          {currentApy >= 0 ? "+" : "-"}
-                          {Math.abs(currentApy).toFixed(2)}%
-                        </td>
+                        {isPositionValid ? (
+                          <td
+                            className={`py-4 px-4 font-inter font-semibold ${
+                              fundingFeeCollected < 0
+                                ? "text-red-500"
+                                : "text-green-500"
+                            }`}
+                          >
+                            {fundingFeeCollected >= 0 ? "+" : "-"}$
+                            {Math.abs(fundingFeeCollected).toFixed(2)}
+                          </td>
+                        ) : (
+                          <td className="py-4 px-4 font-inter text-gray-500 font-semibold">
+                            N/A
+                          </td>
+                        )}
+                        {isPositionValid ? (
+                          <td
+                            className={`py-4 px-4 font-inter font-semibold ${
+                              positionPnL < 0
+                                ? "text-red-500"
+                                : "text-green-500"
+                            }`}
+                          >
+                            {positionPnL >= 0 ? "+" : "-"}$
+                            {Math.abs(positionPnL).toFixed(2)}
+                          </td>
+                        ) : (
+                          <td className="py-4 px-4 font-inter text-gray-500 font-semibold">
+                            N/A
+                          </td>
+                        )}
+                        {isPositionValid ? (
+                          <td
+                            className={`py-4 px-4 font-inter font-semibold ${
+                              currentApy < 0 ? "text-red-500" : "text-green-500"
+                            }`}
+                          >
+                            {currentApy >= 0 ? "+" : "-"}
+                            {Math.abs(currentApy).toFixed(2)}%
+                          </td>
+                        ) : (
+                          <td className="py-4 px-4 font-inter text-gray-500 font-semibold">
+                            N/A
+                          </td>
+                        )}
                         <td>
                           <button
-                            className="bg-[#65558F] hover:bg-[#4e4072] font-light text-white border-black border-[1px] font-inter text-sm w-32 h-8 rounded-md"
+                            className={`${
+                              isPositionValid
+                                ? "bg-[#65558F] hover:bg-[#4e4072] "
+                                : "bg-red-600 hover:bg-red-700   "
+                            } font-light text-white border-black border-[1px] font-inter text-sm w-32 h-8 rounded-md`}
                             onClick={() => handleButtonClick(position)}
-                            {...(isClosing && { disabled: true })}
+                            {...(isClosing && {
+                              disabled: true,
+                            })}
                           >
-                            {isClosing ? "Closing..." : "Close"}
+                            {isPositionValid
+                              ? isClosing
+                                ? "Closing..."
+                                : "Close"
+                              : "Delete Entry"}
                           </button>
                         </td>
                       </tr>

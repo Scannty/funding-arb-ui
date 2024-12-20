@@ -24,7 +24,9 @@ function App() {
     []
   );
   const [openPositions, setOpenPositions] = React.useState<any>([]);
-  const [validPositions, setValidPositions] = React.useState(true);
+  const [validPositions, setValidPositions] = React.useState<
+    Record<string, boolean>
+  >({});
 
   const { address } = useAccount();
   const { data } = useBalance({
