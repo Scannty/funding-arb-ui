@@ -169,9 +169,10 @@ export async function openOrder(
   // Getting the mid price of the perp
   console.log("Getting current mid price of the perp...");
   const response = await fetch(
-    "http://localhost:8000/getCurrentMidPrice?assetIndex=" + assetIndex
+    "http://localhost:8000/getCurrentMidPrice?assetIndexes=" + assetIndex
   );
-  const { midPrice } = await response.json();
+  const perpPrices = await response.json();
+  const midPrice = perpPrices[assetIndex];
   console.log(`Current mid price of the perp: ${midPrice}`);
 
   // Calculating the size of the position

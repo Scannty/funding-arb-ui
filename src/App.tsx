@@ -11,17 +11,9 @@ import PortfolioInfo from "./components/PortfolioInfo";
 import { getPortfolioInfo } from "./utils/database";
 import { getAccountSummary } from "./utils/hyperliquid";
 import { USDC_PROXY_ADDRESS } from "./constants/config";
+import { Perp } from "./constants/types";
 
 function App() {
-  interface Perp {
-    name: string;
-    assetIndex: number;
-    decimals: number;
-    fundingHrly: number;
-    fundingYrly: number;
-    fundingAvgMonthly: number;
-  }
-
   const [usdcBalance, setUsdcBalance] = React.useState(0);
   const [tokensBalances, setTokensBalances] = React.useState<Object>({});
   const [perpsInfo, setPerpsInfo] = React.useState<Perp[]>([]);
@@ -122,6 +114,7 @@ function App() {
               hyperliquidPositions={hyperliquidPositions}
               openPositions={openPositions}
               validPositions={validPositions}
+              perpsInfo={perpsInfo}
               setValidPositions={setValidPositions}
               tokensBalances={tokensBalances}
             />
