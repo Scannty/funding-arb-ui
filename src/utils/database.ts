@@ -37,6 +37,34 @@ export async function storeTradeInfo(
   }
 }
 
+export async function deleteTradeInfo(userAddress: string, asset: string) {
+  try {
+    const res = await fetch(
+      "http://localhost:8000/api/storage/delete-position",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          user_address: userAddress,
+          asset,
+        }),
+      }
+    );
+
+    const data = await res.json();
+    if (!res.ok) {
+      throw new Error(data.message);
+    }
+
+    console.log(data);
+    return data;
+  } catch (error) {
+    console.log(error);
+  }
+}
+
 export async function getPortfolioInfo(userAddress: string): Promise<any> {
   try {
     const res = await fetch(

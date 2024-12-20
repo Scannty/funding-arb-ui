@@ -2,6 +2,13 @@ import React from "react";
 import { useAccount } from "wagmi";
 import { BigNumber, ethers } from "ethers";
 
+import {
+  approveAgentWallet,
+  closeOrder,
+  generateRandomAgent,
+} from "../utils/hyperliquid";
+import { swapTokens } from "../utils/1inch";
+import { deleteTradeInfo } from "../utils/database";
 import { tokens } from "../constants/tokens";
 import { USDC_PROXY_ADDRESS, API_BASE_URL } from "../constants/config";
 import { Perp } from "../constants/types";
@@ -22,6 +29,7 @@ export default function PortfolioInfo(props: {
   const [quotes, setQuotes] = React.useState<number[]>([]);
   const [perpPrices, setPerpPrices] = React.useState<any>({});
   const [isFetched, setIsFetched] = React.useState(false);
+  const [isClosing, setIsClosing] = React.useState(false);
 
   React.useEffect(() => {
     const checkManualPositionChanges = async () => {
@@ -109,12 +117,75 @@ export default function PortfolioInfo(props: {
     fetchHyperliquidPrices();
   }, [props.hyperliquidPositions, address, isFetched]);
 
+  async function closePosition(position: any) {
+    if (!address) {
+      alert("Please connect your wallet");
+      return;
+    }
+
+    try {
+      console.log("Closing Hyperliquid position...");
+      const agentWallet = generateRandomAgent();
+      await approveAgentWallet(agentWallet.address);
+
+      const perp = props.perpsInfo.find((e: any) => e.name == position.asset);
+
+      if (!perp) {
+        throw new Error("Perp not found");
+      }
+
+      const perpAmount = await closeOrder(
+        parseFloat(position.perp_size),
+        perp.decimals,
+        "buy",
+        0.001,
+        perp.assetIndex,
+        agentWallet
+      );
+
+      if (perpAmount === "0") {
+        throw new Error("Error closing order");
+      }
+      console.log("Closed Hyperliquid position");
+
+      console.log("Swapping spot to USDC...");
+      await swapTokens(
+        tokens[position.asset].tokenAddress,
+        USDC_PROXY_ADDRESS,
+        parseFloat(position.spot_amount),
+        0,
+        address
+      );
+      console.log("Swapped spot to USDC");
+
+      console.log("Updating our database ");
+
+      const res = await deleteTradeInfo(address, position.asset);
+
+      if (res.ok) {
+        console.log("Position successfully closed");
+      } else {
+        console.log("Error updating database");
+      }
+    } catch (error) {
+      console.log(error);
+    }
+
+    // ? Unbridge
+  }
+
   function calculatePnL(
     usdAmountIn: string,
     spotAmount: string,
     perpAmount: string
   ) {
     return Number(spotAmount) + Number(perpAmount) - Number(usdAmountIn);
+  }
+
+  async function handleButtonClick(position: any) {
+    setIsClosing(true);
+    await closePosition(position);
+    setIsClosing(false);
   }
 
   if (props.perpsInfo.length != 0 && perpPrices.length != 0) {
@@ -150,6 +221,9 @@ export default function PortfolioInfo(props: {
                 </th>
                 <th className="py-2 px-4 border-b-2 border-gray-200 text-left text-xl font-medium">
                   Current APY
+                </th>
+                <th className="py-2 px-4 border-b-2 border-gray-200 text-left text-xl font-medium">
+                  Manage
                 </th>
               </tr>
             </thead>
@@ -227,6 +301,15 @@ export default function PortfolioInfo(props: {
                         >
                           {currentApy >= 0 ? "+" : "-"}
                           {Math.abs(currentApy).toFixed(2)}%
+                        </td>
+                        <td>
+                          <button
+                            className="bg-[#65558F] hover:bg-[#4e4072] font-light text-white border-black border-[1px] font-inter text-sm w-32 h-8 rounded-md"
+                            onClick={() => handleButtonClick(position)}
+                            {...(isClosing && { disabled: true })}
+                          >
+                            {isClosing ? "Closing..." : "Close"}
+                          </button>
                         </td>
                       </tr>
                     );
