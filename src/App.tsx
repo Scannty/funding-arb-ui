@@ -1,33 +1,30 @@
 import React from "react";
-import { useAccount, useBalance } from "wagmi";
+import { erc20ABI, useAccount, useBalance } from "wagmi";
+import { readContract } from "wagmi/actions";
 
 import Header from "./components/Header";
 import Footer from "./components/Footer";
 import CardComponent from "./components/CardComponent";
 import LoadingSpinner from "./components/LoadingSpinner";
 import { tokens } from "./constants/tokens";
-import PortfolioInfo from "./components/PortfolioInfo";
+import PortfolioDashboard from "./components/PortfolioDashboard";
 import { getPortfolioInfo } from "./utils/database";
 import { getAccountSummary } from "./utils/hyperliquid";
 import { USDC_PROXY_ADDRESS } from "./constants/config";
+import { Perp } from "./constants/types";
 
 function App() {
-  interface Perp {
-    name: string;
-    assetIndex: number;
-    decimals: number;
-    fundingHrly: number;
-    fundingYrly: number;
-    fundingAvgMonthly: number;
-  }
-
   const [usdcBalance, setUsdcBalance] = React.useState(0);
+  const [tokensBalances, setTokensBalances] = React.useState<Object>({});
   const [perpsInfo, setPerpsInfo] = React.useState<Perp[]>([]);
   const [loading, setIsLoading] = React.useState(true);
   const [hyperliquidBalance, setHyperLiquidBalance] = React.useState(0);
   const [portfolioValue, setPortfolioValue] = React.useState(0);
+  const [hyperliquidPositions, setHyperliquidPositions] = React.useState<any>(
+    []
+  );
   const [openPositions, setOpenPositions] = React.useState<any>([]);
-  const [portfolio, setPortfolio] = React.useState<any>([]);
+  const [validPositions, setValidPositions] = React.useState(true);
 
   const { address } = useAccount();
   const { data } = useBalance({
@@ -43,23 +40,45 @@ function App() {
 
     if (!address) return;
 
-    console.log("heehsk");
     const perps = Object.keys(tokens);
     perps.push("HYPE", "PURR");
     const queryString = `perps=${perps.join(",")}`;
+
+    const fetchTokensBalances = async () => {
+      Object.entries(tokens).forEach(async ([ticker, token]) => {
+        const tokenBalance = await readContract({
+          addressOrName: token.tokenAddress,
+          chainId: 42161,
+          contractInterface: erc20ABI,
+          functionName: "balanceOf",
+          args: [address],
+        });
+
+        setTokensBalances((prev) => ({
+          ...prev,
+          [ticker]: tokenBalance,
+        }));
+      });
+    };
+
     const fetchPerpData = async () => {
       const res = await fetch(
         "http://localhost:8000/getPerpsInfo?" + queryString
       );
       const data = await res.json();
 
-      const portfolio = await getPortfolioInfo(address);
-
-      setPortfolio(portfolio);
       setPerpsInfo(data);
       setIsLoading(false);
     };
-    const fetchUserBalance = async () => {
+
+    const fetchUserPositions = async () => {
+      if (!address) return;
+      const positions = await getPortfolioInfo(address);
+
+      setOpenPositions(positions);
+    };
+
+    const fetchHyperliquidInfo = async () => {
       if (!address) return;
       const accountSummary = await getAccountSummary(address);
       setHyperLiquidBalance(
@@ -68,11 +87,13 @@ function App() {
       setPortfolioValue(
         Number(Number(accountSummary.marginSummary.accountValue).toFixed(2))
       );
-      setOpenPositions(accountSummary.assetPositions);
+      setHyperliquidPositions(accountSummary.assetPositions);
     };
 
+    fetchTokensBalances();
     fetchPerpData();
-    fetchUserBalance();
+    fetchUserPositions();
+    fetchHyperliquidInfo();
   }, []);
 
   return (
@@ -86,12 +107,16 @@ function App() {
         <>
           <main>
             {/* Hero section with title and stats */}
-            <PortfolioInfo
+            <PortfolioDashboard
               usdcBalance={usdcBalance}
               hyperliquidBalance={hyperliquidBalance}
               portfolioValue={portfolioValue}
+              hyperliquidPositions={hyperliquidPositions}
               openPositions={openPositions}
-              portfolio={portfolio}
+              validPositions={validPositions}
+              perpsInfo={perpsInfo}
+              setValidPositions={setValidPositions}
+              tokensBalances={tokensBalances}
             />
 
             {/* Card grid section */}
@@ -106,6 +131,7 @@ function App() {
                     fundingHrly={perp.fundingHrly}
                     fundingYrly={perp.fundingYrly}
                     fundingAvgMonthly={perp.fundingAvgMonthly}
+                    hyperliquidBalance={hyperliquidBalance}
                   />
                 ))}
               </div>

@@ -39,10 +39,20 @@ export async function getAccountSummary(address: string): Promise<any> {
   return data;
 }
 
-export async function bridgeFunds(address: string, amount: string) {
+export async function bridgeFunds(
+  address: string,
+  amount: string,
+  userHyperliquidBalance: number
+) {
   try {
+    const bridgeValue = Number(amount) - userHyperliquidBalance;
+    if (bridgeValue <= 0) {
+      console.log("No need to bridge funds");
+      return;
+    }
+    const value = ethers.utils.parseUnits(bridgeValue.toString(), 6);
+
     const deadline = Math.floor(Date.now() / 1000) + 3600; // 1 hour from now
-    const value = ethers.utils.parseUnits(amount, 6); // Amount of USDC to permit (10 USDC in this example)
 
     const domain = {
       name: "USD Coin",
@@ -155,13 +165,14 @@ export async function openOrder(
   slippage: number,
   assetIndex: number,
   agentWallet: ethers.Wallet
-): Promise<number> {
+): Promise<string> {
   // Getting the mid price of the perp
   console.log("Getting current mid price of the perp...");
   const response = await fetch(
-    "http://localhost:8000/getCurrentMidPrice?assetIndex=" + assetIndex
+    "http://localhost:8000/getCurrentMidPrice?assetIndexes=" + assetIndex
   );
-  const { midPrice } = await response.json();
+  const perpPrices = await response.json();
+  const midPrice = perpPrices[assetIndex];
   console.log(`Current mid price of the perp: ${midPrice}`);
 
   // Calculating the size of the position
@@ -185,7 +196,7 @@ export async function openOrder(
         a: assetIndex,
         b: orderType === "buy",
         p: formattedExecutionPrice,
-        s: size.toFixed(perpDecimals).toString(),
+        s: size.toFixed(perpDecimals),
         r: false,
         t: {
           limit: {
@@ -223,10 +234,98 @@ export async function openOrder(
     }
 
     console.log("Order executed");
-    return size;
+    return size.toFixed(perpDecimals);
   } catch (error) {
     console.log("Error executing order: ", error);
-    return 0;
+    return "0";
+  }
+}
+
+export async function closeOrder(
+  size: number,
+  perpDecimals: number,
+  orderType: "buy" | "sell",
+  slippage: number,
+  assetIndex: number,
+  agentWallet: ethers.Wallet
+): Promise<string> {
+  // Getting the mid price of the perp
+  console.log("Getting current mid price of the perp...");
+  const response = await fetch(
+    "http://localhost:8000/getCurrentMidPrice?assetIndexes=" + assetIndex
+  );
+  const perpPrices = await response.json();
+  const midPrice = perpPrices[assetIndex];
+  console.log(`Current mid price of the perp: ${midPrice}`);
+
+  // Calculating the size of the position
+  const amount = size * midPrice;
+  console.log(amount);
+
+  // Calculating the execution price of the position
+  const slippageAmount = slippage * amount; // 0.008% slippage, should adjust dynamically
+  console.log(midPrice);
+  console.log(slippageAmount);
+  const executionPrice =
+    orderType === "sell"
+      ? midPrice - slippageAmount
+      : parseFloat(midPrice) + slippageAmount;
+  console.log(executionPrice);
+  console.log(perpDecimals);
+  const formattedExecutionPrice = _formatPrice(executionPrice, perpDecimals);
+
+  console.log("Execution Price: ", formattedExecutionPrice);
+  console.log("Trade Value: ", size * executionPrice);
+  const action = {
+    type: "order",
+    orders: [
+      {
+        a: assetIndex,
+        b: orderType === "buy",
+        p: formattedExecutionPrice,
+        s: size.toFixed(perpDecimals),
+        r: false,
+        t: {
+          limit: {
+            tif: "Gtc",
+          },
+        },
+      },
+    ],
+    grouping: "na",
+  };
+
+  console.log(action);
+
+  const nonce = Date.now();
+
+  try {
+    console.log("Signing message...");
+    const signature = await _signL1Action(action, nonce, true, agentWallet);
+    console.log("Message signed!");
+    console.log("Sending order to Hyperliquid...");
+    const res = await fetch("https://api.hyperliquid.xyz/exchange", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        action,
+        nonce,
+        signature,
+      }),
+    });
+
+    const data = await res.json();
+    if (data.status === "err") {
+      throw new Error(data.response);
+    }
+
+    console.log("Order executed");
+    return size.toFixed(perpDecimals);
+  } catch (error) {
+    console.log("Error executing order: ", error);
+    return "0";
   }
 }
 

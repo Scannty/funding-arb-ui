@@ -19,7 +19,7 @@ export async function swapTokens(
   address: string
 ): Promise<string> {
   try {
-    const swapAmount = parseUnits(amount.toString(), decimals);
+    const swapAmount = parseUnits(amount.toFixed(decimals), decimals);
 
     const currentAllowance = (await readContract({
       addressOrName: tokenIn,

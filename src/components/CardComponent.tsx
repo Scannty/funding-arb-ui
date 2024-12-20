@@ -26,6 +26,7 @@ interface CardComponentProps {
   fundingHrly: number;
   fundingYrly: number;
   fundingAvgMonthly: number;
+  hyperliquidBalance: number;
 }
 
 export default function CardComponent(props: CardComponentProps) {
@@ -49,10 +50,16 @@ export default function CardComponent(props: CardComponentProps) {
       alert("Please connect your wallet");
       return;
     }
+
+    const [spotAmountIn, perpAmountIn] = splitTransactionValue(
+      Number(transactionValue),
+      leverageRatio
+    );
+
     try {
-      // setBridgeActive(true);
-      // await bridgeFunds(address, transactionValue);
-      // setBridgeActive(false);
+      setBridgeActive(true);
+      await bridgeFunds(address, transactionValue, props.hyperliquidBalance);
+      setBridgeActive(false);
 
       setApprovingAgent(true);
       const agentWallet = generateRandomAgent();
@@ -69,14 +76,14 @@ export default function CardComponent(props: CardComponentProps) {
 
       setExecutingPerp(true);
       const perpAmount = await openOrder(
-        Number(transactionValue),
+        perpAmountIn * leverageRatio,
         props.perpDecimals,
         "sell",
         0.001,
         props.assetIndex,
         agentWallet
       );
-      if (perpAmount === 0) {
+      if (perpAmount === "0") {
         throw new Error("Error opening order");
       }
       setExecutingPerp(false);
@@ -85,7 +92,7 @@ export default function CardComponent(props: CardComponentProps) {
       let spotAmount;
       if (props.name === "HYPE" || props.name === "PURR") {
         spotAmount = await openOrder(
-          Number(transactionValue),
+          spotAmountIn,
           props.perpDecimals,
           "buy",
           0.001,
@@ -96,15 +103,14 @@ export default function CardComponent(props: CardComponentProps) {
         spotAmount = await swapTokens(
           USDC_PROXY_ADDRESS,
           tokens[props.name].tokenAddress,
-          Number(transactionValue) * leverageRatio,
+          spotAmountIn,
           6,
           address
         );
       }
-      if (spotAmount == 0) {
+      if (spotAmount === "0") {
         throw new Error("Error swapping tokens");
       }
-      console.log("Spot Amount:", spotAmount);
       setExecutingSwap(false);
 
       await storeTradeInfo(
@@ -112,7 +118,8 @@ export default function CardComponent(props: CardComponentProps) {
         props.name,
         spotAmount.toString(),
         perpAmount.toString(),
-        leverageRatio.toString()
+        leverageRatio.toString(),
+        transactionValue
       );
     } catch (error) {
       console.log("Error:", error);
@@ -126,6 +133,15 @@ export default function CardComponent(props: CardComponentProps) {
         setIsError(false);
       }, 5000);
     }
+  }
+
+  function splitTransactionValue(
+    value: number,
+    leverage: number
+  ): [number, number] {
+    const perpAmount = value / (leverage + 1);
+    const spotAmount = value - perpAmount;
+    return [spotAmount, perpAmount];
   }
 
   function calculateEffectiveAPY(leverageRatio: number, fundingRate: number) {
