@@ -7,7 +7,7 @@ import Footer from "./components/Footer";
 import CardComponent from "./components/CardComponent";
 import LoadingSpinner from "./components/LoadingSpinner";
 import { tokens } from "./constants/tokens";
-import PortfolioInfo from "./components/PortfolioInfo";
+import PortfolioDashboard from "./components/PortfolioDashboard";
 import { getPortfolioInfo } from "./utils/database";
 import { getAccountSummary } from "./utils/hyperliquid";
 import { USDC_PROXY_ADDRESS } from "./constants/config";
@@ -107,7 +107,7 @@ function App() {
         <>
           <main>
             {/* Hero section with title and stats */}
-            <PortfolioInfo
+            <PortfolioDashboard
               usdcBalance={usdcBalance}
               hyperliquidBalance={hyperliquidBalance}
               portfolioValue={portfolioValue}

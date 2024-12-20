@@ -13,7 +13,7 @@ import { tokens } from "../constants/tokens";
 import { USDC_PROXY_ADDRESS, API_BASE_URL } from "../constants/config";
 import { Perp } from "../constants/types";
 
-export default function PortfolioInfo(props: {
+export default function PortfolioDashboard(props: {
   usdcBalance: number;
   hyperliquidBalance: number;
   portfolioValue: number;
